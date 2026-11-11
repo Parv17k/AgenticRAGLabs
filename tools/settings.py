@@ -30,12 +30,18 @@ load_env()
 
 MODEL = os.environ.get("DEMO_MODEL", "openai/gpt-4.1-mini")
 REASONING_EFFORT = os.environ.get("DEMO_REASONING_EFFORT") or None
+#: 0 makes a live demo repeat itself. Self-hosted servers often default to 1.0.
+TEMPERATURE = float(os.environ.get("DEMO_TEMPERATURE", "0"))
 EMBED_MODEL = os.environ.get("DEMO_EMBED_MODEL", "openai/text-embedding-3-small")
 RERANK_MODEL = os.environ.get("DEMO_RERANK_MODEL") or None
 PRICE_AS = os.environ.get("PRICE_AS") or None
 API_BASE = (os.environ.get("OPENAI_API_BASE") or "https://api.openai.com/v1").rstrip("/")
 #: Extra arguments for every direct chat call, e.g. turning thinking off.
-LLM_KWARGS = {"reasoning_effort": REASONING_EFFORT} if REASONING_EFFORT else {}
+LLM_KWARGS = {"temperature": TEMPERATURE, "max_tokens": 4096} | (
+    {"reasoning_effort": REASONING_EFFORT} if REASONING_EFFORT else {})
+#: The same model as LangChain's init_chat_model names it ("openai:gpt-4.1-mini"), for the
+#: LangGraph notebooks. ChatOpenAI reads OPENAI_API_BASE and OPENAI_API_KEY itself.
+CHAT_MODEL = MODEL.replace("/", ":", 1)
 #: Some gateways (Cloudflare) refuse Python's default user agents.
 HEADERS = {"Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', '')}", "User-Agent": "agentic-rag-demos/0.1"}
 

@@ -1,0 +1,6 @@
+# Lecture 2 · v4, the same agent with OpenSearch hybrid search + rerank behind search_docs.
+#   docker compose up -d opensearch
+#   agentship run lecture2/v4.yaml --input "How many shares did Acme buy back last quarter?"
+name: agentic-rag-v4
+engine: langgraph
+code: lecture2/agentic_rag_tuned.py:build_v4   # tools: [search_docs_hybrid]

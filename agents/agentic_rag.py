@@ -1,224 +1,209 @@
-"""Agentic RAG as an AgentShip custom agent (slides 48–51), used by v3, v4 and v5.
+"""v3 · agentic RAG (chapter 4), and the same graph served on AgentShip (chapter 5).
 
     question → agent ─ no tool call ──────────────────────────→ verify → END
-                 │                                                 │
-                 └─ search_docs → retrieve → grade ─ relevant ─→ agent (answers from what's left)
-                                               └─ nothing relevant → rewrite → agent (searches again)
+                 └─ search_docs → retrieve → grade ─ relevant ─────────→ agent (answers)
+                                               ├─ weak, retries < 2 ──→ rewrite → agent (searches again)
+                                               └─ weak, out of retries → give_up → END
 
-agent    the LLM with search_docs bound. It decides whether to search, and how many times.
-grade    one call marks which retrieved chunks are relevant; the rest are dropped from context.
-rewrite  when nothing was relevant: write a better query, count a retry (max_retries), search again.
-verify   is every claim in the answer in the evidence? If not, answer once more or say so.
+build_v3_graph(model, tools) is the chapter 4 graph (slides 52–53). v3_agentic_rag.ipynb builds
+the same graph cell by cell; keep the two in step. AgenticRAG wraps it, unchanged, for AgentShip
+(slide 60):
 
-Every loop is bounded: retries and search rounds are counted per turn, in state.
-The versions differ only in configuration (bottom of this file):
-
-    v3  vector search over fixed chunks (tools/search_docs.py)
-    v4  OpenSearch hybrid + RRF + rerank (tools/opensearch_search.py)
-    v5  v4, tuned: rerank to 3, one retry, no thinking for small decisions, trimmed history
+    agentship run agents/agentic_rag.yaml --input "How did Acme's Q3 margin compare to Q2, and why?"
+    agentship serve --agents-dir agents
 """
 
 from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
-from typing import Annotated
+
+import httpx
 
 from agentship.spec import AgentSpec, ModelParams, ObservabilitySpec
 from agentship_langgraph import LangGraphAgent
-from agentship_langgraph import models
 from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage, SystemMessage, ToolMessage
-from langgraph.graph import END, START, StateGraph
-from langgraph.graph.message import add_messages
-from langgraph.prebuilt import ToolNode
-from tools.settings import MODEL
-from typing_extensions import TypedDict
+from langgraph.graph import END, START, MessagesState, StateGraph
+from langgraph.prebuilt import ToolNode, tools_condition
+from tools.settings import API_BASE, HEADERS, MODEL, REASONING_EFFORT, RERANK_MODEL, TEMPERATURE
 
-PROMPT = """You are an analyst answering questions about Acme Corp's quarterly filing (Form 10-Q, Q3 2026).
-Use search_docs for any Acme-specific fact or number. Search once per quarter or topic you need, and
-when the searches are independent, request them together in one turn. Do not search for greetings,
-thanks, or general definitions; answer those directly and briefly.
-Answer only from the search results, cite the chunk ids you used like [chunk 36], and say you don't
-know if the results do not contain the answer. Be concise."""
+PROMPT = """You answer questions about Acme Corp's quarterly filing (Form 10-Q for Q3 2026).
+Use search_docs for any Acme-specific fact or number, once per quarter or topic you need: to
+compare two quarters, search for each. Answer greetings, thanks and general definitions directly,
+without searching. Answer only from the search results, cite chunk ids like [chunk 36], and say
+so when the filings don't contain the answer. Be concise."""
 
-OUT_OF_ROUNDS = ("You have used every search allowed for this question. Do not search again: answer now "
-                 "from the search results above, or say the filing does not answer it.")
-CHUNK_SEPARATOR = "\n\n---\n\n"
-MAX_TOKENS = 4096  # per call: a short answer needs far less, and a looping model stops here
+MAX_RETRIES = 2  # rewrites per question
+MAX_SEARCHES = 4  # search rounds per question, a second cap so the loop always ends
+SEPARATOR = "\n\n---\n\n"  # between chunks in a search_docs result
 
 
-@dataclass(frozen=True)
-class Config:
-    max_retries: int = 2  # rewrite + search again when the grader finds nothing relevant
-    max_search_rounds: int = 4  # hard cap on tool rounds per turn
-    verify: bool = True  # check the answer against the evidence before returning it
-    history_turns: int | None = None  # keep only the last N turns of the thread in the prompt
-    small_effort: str | None = None  # reasoning effort for grade / rewrite / verify
-
-
-class RAGState(TypedDict, total=False):
-    messages: Annotated[list, add_messages]
-    retries: int
-    relevant: int
-    hint: str | None
+class RAGState(MessagesState):
+    retries: int  # rewrites so far this question: the counter that ends the loop
+    relevant: int  # chunks the grader kept from the last search
+    note: str | None  # a one-off instruction for the agent's next call, from verify
+    query: str | None  # the rewritten query the agent must search with next
     verified: bool
-
-
-def _turn_start(messages: list) -> int:
-    """Index of the latest user message: everything after it belongs to this turn."""
-    return max(i for i, m in enumerate(messages) if isinstance(m, HumanMessage))
 
 
 def _text(message) -> str:
     return message.content if isinstance(message.content, str) else str(message.content)
 
 
-def _ask(model, prompt: str) -> str:
-    return _text(model.invoke([HumanMessage(content=prompt)])).strip()
+def _this_turn(messages: list) -> list:
+    """Everything from the latest user message on."""
+    start = max(i for i, m in enumerate(messages) if isinstance(m, HumanMessage))
+    return messages[start:]
 
+
+def relevant(query: str, passages: list[str], ask) -> list[bool]:
+    """The grader: which passages state what the search looked for?
+
+    A cross-encoder (DEMO_RERANK_MODEL) reads each query–passage pair and scores it: above 0 means
+    relevant. It is small, fast and steadier than asking the chat model. Without one, the chat model
+    picks the passages instead.
+    """
+    if RERANK_MODEL:
+        resp = httpx.post(f"{API_BASE}/reranking", headers=HEADERS, timeout=60,
+                          json={"model": RERANK_MODEL, "query": query, "documents": passages})
+        resp.raise_for_status()
+        scores = {r["index"]: r["relevance_score"] for r in resp.json()["results"]}
+        return [scores[i] > 0 for i in range(len(passages))]
+    listing = "\n\n".join(f"<passage {n}>\n{p}\n</passage {n}>" for n, p in enumerate(passages, 1))
+    verdict = ask(f"Search: {query}\n\n{listing}\n\nWhich passages state what the search looks for? "
+                  f'Reply with JSON only, like {{"relevant": [1, 3]}}, or {{"relevant": []}}.')
+    try:
+        keep = {int(n) for n in json.loads(re.search(r"\{.*\}", verdict, re.S).group())["relevant"]}
+    except Exception:  # an unreadable verdict: keep everything rather than lose evidence
+        keep = set(range(1, len(passages) + 1))
+    return [n in keep for n in range(1, len(passages) + 1)]
+
+
+def build_v3_graph(model, tools, verify: bool = True) -> StateGraph:
+    """The chapter 4 graph over any chat model and the search_docs tool."""
+    llm = model.bind_tools(tools)
+    judge = model.bind(temperature=0)  # the small decisions should not be a coin toss
+
+    def ask(prompt: str) -> str:  # the small decisions: grade, rewrite, verify
+        return _text(judge.invoke([HumanMessage(content=prompt)])).strip()
+
+    def agent(state: RAGState) -> dict:
+        """LLM + search_docs: decides whether to search, what for, and when to answer."""
+        messages = state["messages"]
+        new_turn = isinstance(messages[-1], HumanMessage)
+        note = None if new_turn else state.get("note")
+        searches = sum(1 for m in _this_turn(messages) if isinstance(m, AIMessage) and m.tool_calls)
+        system = PROMPT + (f"\n\n{note}" if note else "")
+        history = [m for m in messages if not isinstance(m, SystemMessage)]
+        if state.get("query") and not new_turn and searches < MAX_SEARCHES:  # after a rewrite
+            call = {"name": "search_docs", "args": {"query": state["query"]}, "id": f"rewrite-{state['retries']}"}
+            reply = AIMessage(content="", tool_calls=[call])
+        elif searches < MAX_SEARCHES:
+            reply = llm.invoke([SystemMessage(content=system)] + history)
+        else:  # out of searches: no tools bound, so say why, or the model writes a search as text
+            system += "\n\nYou have used every search for this question. Answer from the results above."
+            reply = model.invoke([SystemMessage(content=system)] + history)
+            if "<tool_call>" in _text(reply):
+                answer = _text(reply).split("<tool_call>")[0].strip()
+                reply = AIMessage(content=answer or "The filings' search results don't answer this.")
+        update = {"messages": [reply], "note": None, "query": None}
+        if new_turn:
+            update |= {"retries": 0, "relevant": 0, "verified": False}
+        return update
+
+    def grade(state: RAGState) -> dict:
+        """Small model: which chunks state what each search looked for? Drop the rest."""
+        messages = state["messages"]
+        results = []
+        for m in reversed(messages):  # the ToolMessages this search just added
+            if not isinstance(m, ToolMessage):
+                break
+            results.insert(0, m)
+        call = next(m for m in reversed(messages) if isinstance(m, AIMessage) and m.tool_calls)
+        queries = {c["id"]: c["args"].get("query", "") for c in call.tool_calls}
+        graded, n_relevant = [], 0
+        for m in results:  # each search is graded against its own query
+            passages = [p for p in _text(m).split(SEPARATOR) if p.strip()]
+            kept = [p for p, ok in zip(passages, relevant(queries.get(m.tool_call_id, ""), passages, ask)) if ok]
+            n_relevant += len(kept)
+            graded.append(ToolMessage(content=SEPARATOR.join(kept) or "No relevant passages.",
+                                      tool_call_id=m.tool_call_id, name=m.name, id=m.id))
+        return {"messages": graded, "relevant": n_relevant}
+
+    def rewrite(state: RAGState) -> dict:
+        """Nothing relevant: write a better query, count one retry."""
+        messages = state["messages"]
+        question = _text(_this_turn(messages)[0])
+        last = next(m for m in reversed(messages) if isinstance(m, AIMessage) and m.tool_calls)
+        queries = [c["args"].get("query", "") for c in last.tool_calls]
+        better = ask(f"Question: {question}\nThese searches of a company's 10-Q filing found nothing "
+                     f"relevant: {queries}\nWrite one better search query, in the words a 10-Q would "
+                     f"use. Reply with the query only.").splitlines()[0][:200]
+        return {"retries": state.get("retries", 0) + 1, "query": better}
+
+    def give_up(state: RAGState) -> dict:
+        """Out of retries: say so instead of guessing."""
+        return {"messages": [AIMessage(content="I couldn't find that in Acme's filings, even after "
+                                               "rewriting the search.")]}
+
+    def check(state: RAGState) -> dict:
+        """Verify: is every claim in the answer in the evidence? If not, answer once more."""
+        messages = state["messages"]
+        evidence = "\n\n".join(_text(m) for m in _this_turn(messages) if isinstance(m, ToolMessage))
+        if state.get("verified") or not evidence:  # already checked, or nothing was searched
+            return {}
+        answer = messages[-1]
+        verdict = ask(f"EVIDENCE:\n{evidence}\n\nANSWER:\n{_text(answer)}\n\nIs every number and factual "
+                      f"claim in ANSWER supported by EVIDENCE? Saying the evidence doesn't contain something counts as "
+                      f"supported. Reply with yes or no only.")
+        if verdict.strip("*_ .").lower().startswith("yes"):
+            return {"verified": True}
+        return {"verified": True, "messages": [RemoveMessage(id=answer.id)],
+                "note": "Your last answer had claims that are not in the search results. Answer again "
+                        "using only the search results, or say the filings don't contain it."}
+
+    def after_grade(state: RAGState) -> str:
+        if state["relevant"]:
+            return "agent"  # good: answer
+        if state.get("retries", 0) < MAX_RETRIES:
+            return "rewrite"  # weak: try again
+        return "give_up"  # out of retries
+
+    g = StateGraph(RAGState)
+    g.add_node("agent", agent)  # LLM + search_docs
+    g.add_node("retrieve", ToolNode(tools))
+    g.add_node("grade", grade)  # small model: relevant?
+    g.add_node("rewrite", rewrite)  # better query, retries+1
+    g.add_node("give_up", give_up)
+    g.add_edge(START, "agent")
+    g.add_conditional_edges("agent", tools_condition, {"tools": "retrieve", END: "verify" if verify else END})
+    g.add_edge("retrieve", "grade")
+    g.add_conditional_edges("grade", after_grade, ["agent", "rewrite", "give_up"])
+    g.add_edge("rewrite", "agent")
+    g.add_edge("give_up", END)
+    if verify:  # slide 52's last step, before the final answer
+        g.add_node("verify", check)
+        g.add_conditional_edges("verify", lambda s: "agent" if s.get("note") else END, ["agent", END])
+    return g
+
+
+# ---------------------------------------------------------------- chapter 5: ship it
 
 class AgenticRAG(LangGraphAgent):
-    """The graph above, over AgentShip's wired model and tools."""
+    """The chapter 4 graph as an AgentShip agent: an API, sessions, traces."""
 
     #: Nodes whose model output is bookkeeping, kept out of the streamed answer.
     internal_nodes = frozenset({"grade", "rewrite", "verify"})
 
-    def __init__(self, spec: AgentSpec, config: Config) -> None:
-        super().__init__(spec)
-        self.config = config
-
-    def build_graph(self, model, tools) -> StateGraph:
-        cfg = self.config
-        small = models.resolve_model(MODEL, reasoning_effort=cfg.small_effort, max_tokens=MAX_TOKENS,
-                                     streaming=False)
-        with_tools = model.bind_tools(tools)
-
-        def agent(state: RAGState) -> dict:
-            messages = state["messages"]
-            start = _turn_start(messages)
-            new_turn = start == len(messages) - 1
-            rounds = sum(1 for m in messages[start:] if isinstance(m, AIMessage) and m.tool_calls)
-
-            system = [m for m in messages[:1] if isinstance(m, SystemMessage)]
-            history = [m for m in messages[len(system):] if not isinstance(m, RemoveMessage)]
-            if cfg.history_turns is not None:  # keep the last N turns: from the Nth-last user message on
-                humans = [i for i, m in enumerate(history) if isinstance(m, HumanMessage)]
-                history = history[humans[-cfg.history_turns]:] if len(humans) > cfg.history_turns else history
-            hint = None if new_turn else state.get("hint")
-            out_of_rounds = rounds >= cfg.max_search_rounds
-            if out_of_rounds:  # no tools bound now, so say why, or the model writes a search as text
-                hint = (hint + "\n\n" if hint else "") + OUT_OF_ROUNDS
-            if hint:  # one-off guidance for this call; never stored in the thread
-                system = [SystemMessage(content=(system[0].content if system else PROMPT) + "\n\n" + hint)]
-
-            reply = (model if out_of_rounds else with_tools).invoke(system + history)
-            if not reply.tool_calls and "<tool_call>" in _text(reply):  # a search written out as text
-                answer = _text(reply).split("<tool_call>")[0].strip()
-                reply = AIMessage(content=answer or "The filing's search results don't answer this.", id=reply.id)
-            update = {"messages": [reply], "hint": None}
-            if new_turn:
-                update |= {"retries": 0, "relevant": 0, "verified": False}
-            return update
-
-        def grade(state: RAGState) -> dict:
-            messages = state["messages"]
-            question = _text(messages[_turn_start(messages)])
-            results = []
-            for m in reversed(messages):
-                if not isinstance(m, ToolMessage):
-                    break
-                results.insert(0, m)
-            passages = [(m, p) for m in results for p in _text(m).split(CHUNK_SEPARATOR) if p.strip()]
-            if not passages:
-                return {"relevant": 0}
-            listing = "\n\n".join(f"<passage {n}>\n{p}\n</passage {n}>" for n, (_, p) in enumerate(passages, 1))
-            verdict = _ask(small, f"Question: {question}\n\n{listing}\n\nWhich passages contain information "
-                                  f"that helps answer the question? Reply with JSON only, like "
-                                  f'{{"relevant": [1, 3]}}, or {{"relevant": []}} if none do.')
-            try:
-                keep = {int(n) for n in json.loads(re.search(r"\{.*\}", verdict, re.S).group())["relevant"]}
-            except Exception:  # unparseable verdict: keep everything rather than lose evidence
-                keep = set(range(1, len(passages) + 1))
-            kept = {}
-            for n, (m, p) in enumerate(passages, 1):
-                if n in keep:
-                    kept.setdefault(m.id, []).append(p)
-            graded = [ToolMessage(content=CHUNK_SEPARATOR.join(kept[m.id]) if m.id in kept
-                                  else "No relevant passages for this search.",
-                                  tool_call_id=m.tool_call_id, name=m.name, id=m.id) for m in results]
-            return {"messages": graded, "relevant": len([n for n in keep if 1 <= n <= len(passages)])}
-
-        def rewrite(state: RAGState) -> dict:
-            messages = state["messages"]
-            start = _turn_start(messages)
-            question = _text(messages[start])
-            last_call = next(m for m in reversed(messages) if isinstance(m, AIMessage) and m.tool_calls)
-            queries = [c["args"].get("query", "") for c in last_call.tool_calls]
-            better = _ask(small, f"Question: {question}\nThese searches of a company's 10-Q filing found nothing "
-                                 f"relevant: {queries}\nWrite one better search query, using the words a 10-Q "
-                                 f"would use. Reply with the query only.")
-            hint = (f"Your last search ({', '.join(queries)}) found nothing relevant. "
-                    f"Search again, for example with: {better.splitlines()[0][:200]}")
-            return {"hint": hint, "retries": state.get("retries", 0) + 1}
-
-        def verify(state: RAGState) -> dict:
-            messages = state["messages"]
-            start = _turn_start(messages)
-            answer = messages[-1]
-            evidence = "\n\n".join(_text(m) for m in messages[start:] if isinstance(m, ToolMessage))
-            verdict = _ask(small, f"EVIDENCE:\n{evidence}\n\nANSWER:\n{_text(answer)}\n\nIs every number and "
-                                  f"factual claim in ANSWER supported by EVIDENCE? Reply with yes or no only.")
-            if verdict.lower().startswith("yes"):
-                return {"verified": True}
-            return {"verified": True, "messages": [RemoveMessage(id=answer.id)],
-                    "hint": "Your previous answer had claims that are not in the search results. Answer "
-                            "again using only the search results, or say you don't know."}
-
-        def after_agent(state: RAGState) -> str:
-            messages = state["messages"]
-            if messages[-1].tool_calls:
-                return "retrieve"
-            searched = any(isinstance(m, ToolMessage) for m in messages[_turn_start(messages):])
-            return "verify" if cfg.verify and searched and not state.get("verified") else END
-
-        def after_grade(state: RAGState) -> str:
-            return "rewrite" if not state.get("relevant") and state.get("retries", 0) < cfg.max_retries else "agent"
-
-        g = StateGraph(RAGState)
-        g.add_node("agent", agent)
-        g.add_node("retrieve", ToolNode(tools))
-        g.add_node("grade", grade)
-        g.add_node("rewrite", rewrite)
-        g.add_node("verify", verify)
-        g.add_edge(START, "agent")
-        g.add_conditional_edges("agent", after_agent, ["retrieve", "verify", END])
-        g.add_edge("retrieve", "grade")
-        g.add_conditional_edges("grade", after_grade, ["rewrite", "agent"])
-        g.add_edge("rewrite", "agent")
-        g.add_conditional_edges("verify", lambda s: "agent" if s.get("hint") else END, ["agent", END])
-        return g
+    def build_graph(self, model, tools):
+        # the chapter 4 graph, unchanged
+        return build_v3_graph(model, tools)
 
 
-def _agent(name: str, tool: str, config: Config, effort: str | None) -> AgenticRAG:
+def build_agent() -> AgenticRAG:
     return AgenticRAG(AgentSpec(
-        name=name, engine="langgraph", model=MODEL, prompt=PROMPT, tools=[tool],
-        params=ModelParams(reasoning_effort=effort, max_tokens=MAX_TOKENS),
+        name="agentic-rag", engine="langgraph", model=MODEL, prompt=PROMPT,
+        tools=["search_docs"],  # AgentShip reads the spec from here when the YAML sets code:
+        params=ModelParams(temperature=TEMPERATURE, reasoning_effort=REASONING_EFFORT, max_tokens=4096),
         durability="checkpoint", observability=ObservabilitySpec(),
-    ), config)
-
-
-def build_v3() -> AgenticRAG:
-    """v3: agentic RAG over v1's index. The model thinks a little on every call."""
-    return _agent("agentic-rag", "search_docs", Config(small_effort="low"), "low")
-
-
-def build_v4() -> AgenticRAG:
-    """v4: the same graph, with OpenSearch hybrid search and a reranker behind search_docs."""
-    return _agent("agentic-rag-v4", "search_docs_hybrid", Config(small_effort="low"), "low")
-
-
-def build_v5() -> AgenticRAG:
-    """v5: v4 tuned. Rerank to 3, one retry, no thinking on small decisions, the last 3 turns only."""
-    return _agent("researcher-v5", "search_docs_hybrid_top3",
-                  Config(max_retries=1, history_turns=3, small_effort="none"), "low")
+    ))

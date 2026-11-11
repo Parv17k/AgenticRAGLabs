@@ -1,13 +1,17 @@
 [project]
 name = "agentic-rag-demos"
 version = "0.1.0"
-description = "Live demos for the NYU Agentic RAG guest lecture, from v0 (whole document) to v5 (optimized)."
+description = "Labs for the NYU Agentic RAG lecture: from the whole document (v0) to agentic RAG served on AgentShip (v3)."
 requires-python = ">=3.13"
 dependencies = [
     "agentship-sdk[starter,service,observability]>=0.0.4",
     "agentship-core[postgres]>=0.0.4",       # durable checkpoints in Postgres (docker compose up -d)
     "agentship-langgraph[postgres]>=0.0.4",
     "httpx",
+    "ipykernel",
+    "langchain>=1.0",                        # init_chat_model, create_agent (chapter 3)
+    "langchain-openai>=1.0",                 # the OpenAI-compatible chat model behind init_chat_model
+    "langgraph>=1.0",
     "litellm",
     "numpy",
     "pandas",

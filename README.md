@@ -1,20 +1,23 @@
-# Demos · Agentic RAG guest lecture
+# Agentic RAG labs · NYU lecture 1, Foundations
 
-One synthetic Acme 10-Q (`data/acme_10q.txt`, ~100K tokens), one golden set, and a version per module.
-Every version answers the same questions, so `eval.py` can put them side by side (module 06).
+One synthetic Acme 10-Q (`data/acme_10q.txt`, ~100K tokens) and one question, answered five times:
+"How did Acme's Q3 margin compare to Q2, and why?" Each lab is the live demo of one chapter.
 
-| Module | Version | What changes | Run |
+| Chapter | Slides | Version | Lab |
 |---|---|---|---|
-| 00 | v0 | the whole filing in every prompt | `v0_whole_doc.ipynb` |
-| 01 | v1 | basic RAG: 500-token chunks, vectors, top 5, every message | `v1_basic_rag.ipynb` |
-| 02 | v2 | AgentShip agent and team; `search_docs` is a tool the agent may call | `agents/calc.yaml`, `agents/team.yaml` |
-| 03 | v3 | agentic RAG graph: route, retrieve, grade, rewrite, verify, loops capped | `agents/agentic_rag.yaml` |
-| 04 | v4 | v3 with OpenSearch: structural chunks, BM25 + k-NN, RRF, rerank | `agents/agentic_rag_v4.yaml`, `tools/opensearch_search.py` |
-| 05 | v5 | v4 tuned by configuration: router, rerank to 3, fewer retries, less thinking | `agents_v5/team.yaml` |
-| 06 | all | one question through every version, then the golden set | `eval.py` |
+| 1 · Just upload the PDF | 12 | v0 · the whole filing in every prompt | `v0_whole_doc.ipynb` |
+| 2 · Send only what matters | 23–24 | v1 · basic RAG: chunk, embed, top 5 | `v1_basic_rag.ipynb` |
+| 3 · Give the model judgment | 35–45 | v2 · a LangGraph agent with `search_docs` | `v2_langgraph_agent.ipynb`, `agents/langgraph_agent.py` |
+| 4 · Search with judgment | 48–54 | v3 · agentic RAG: route, retrieve, grade, rewrite, verify | `v3_agentic_rag.ipynb`, `agents/agentic_rag.py` |
+| 5 · Ship it | 59–65 | v3 served on AgentShip, an agent, a team | `agents/agentic_rag.yaml`, `agents/calc.yaml`, `agents/team.yaml` |
+| Finale | 68–69 | v0 → v3 on one question, side by side | `run_all.ipynb` |
 
-`tools/search_docs.py` (v1–v3) and `tools/opensearch_search.py` (v4–v5) return the same thing, so
-the agents cannot tell which index they search. `agents/agentic_rag.py` holds the v3–v5 graph.
+`v3_agentic_rag.ipynb` builds the graph that `agents/agentic_rag.py` defines as `build_v3_graph`, and
+chapter 5 serves that same function on AgentShip unchanged. `eval.py` scores any version on the 14-question
+golden set (`golden.json`).
+
+`lecture2/` and `tools/opensearch_search.py` are for lecture 2 (hybrid search, reranking, evaluation,
+tuning): v4 runs the agentic RAG graph on OpenSearch, and v5 tunes it as a team.
 
 ## Setup
 
@@ -29,8 +32,8 @@ agentship db upgrade --allow-migrations --database-url postgresql://agentship:ag
 python -m ipykernel install --user --name agentic-rag-demos   # the notebooks' kernel
 ```
 
-Until [Agent-Ship/agent-ship#85](https://github.com/Agent-Ship/agent-ship/pull/85) is released, v2 and
-v5 need its fixes (a team re-answering turn one, tools ignored without a template, team params):
+Until [Agent-Ship/agent-ship#85](https://github.com/Agent-Ship/agent-ship/pull/85) is released, the
+AgentShip labs need its fixes (a team re-answering turn one, tools ignored without a template, team params):
 
 ```bash
 git clone -b fix/supervisor-turn-state-and-tools-default https://github.com/Agent-Ship/agent-ship.git ../agent-ship
@@ -38,7 +41,7 @@ pip install -e ../agent-ship/packages/agentship-core -e ../agent-ship/packages/a
 ```
 
 Any OpenAI-compatible server works: set `OPENAI_API_BASE`, `DEMO_MODEL`, `DEMO_EMBED_MODEL` and,
-for v4–v5, `DEMO_RERANK_MODEL` (a `/reranking` model on the same server). A local model has no list
+for lecture 2, `DEMO_RERANK_MODEL` (a `/reranking` model on the same server). A local model has no list
 price, so `PRICE_AS` names the model whose price fills the $ columns. The agent YAMLs name their model
 directly; change `model:` there too if you switch.
 
@@ -48,26 +51,30 @@ iCloud otherwise evicts files, and reads from them stall.
 
 ## Running each demo
 
+Open the notebooks with the *Agentic RAG demos* kernel and run them top to bottom. The rest is shell:
+
 ```bash
-# v2 · slides 35–43
-agentship run agents/calc.yaml --input "What is 17 times 23?"
-agentship run agents/team.yaml --input "Compare Q3 and Q2 revenue."
-agentship serve --agents-dir agents    # Studio at http://127.0.0.1:8000/studio, key dev-secret
-
-# v3 · slide 52
-agentship run agents/agentic_rag.yaml --input "Hi!"                                   # no search
+# Chapter 5 · slides 59–65
+agentship run agents/calc.yaml --input "What is 17 times 23?"                      # slide 59
 agentship run agents/agentic_rag.yaml --input "How did Acme's Q3 margin compare to Q2, and why?"
+agentship run agents/team.yaml --input "Compare Q3 and Q2 revenue."                # slide 62
+agentship serve --agents-dir agents    # slide 65 · Studio at http://127.0.0.1:8000/studio, key dev-secret
+                                       # traces in Phoenix at http://localhost:6006
 
-# v4 · slide 68: the same question through BM25, k-NN, hybrid and hybrid + rerank
-python tools/opensearch_search.py "How many shares did Acme buy back last quarter?"
-agentship run agents/agentic_rag_v4.yaml --input "How many shares did Acme buy back last quarter?"
+# Finale · slides 68–69: run_all.ipynb, or the whole golden set, scored
+python eval.py --agents v0,v1,v2,v3 "How did Acme's Q3 margin compare to Q2, and why?"
+python eval.py --agents v1,v2,v3 --out results.json
 
-# v5 and module 06 · slides 82, 86–87
-python eval.py --agents v4,v5
-python eval.py --agents v0,v1,v2,v3,v4,v5 "How did Acme's Q3 margin compare to Q2, and why?"
-python eval.py --agents v0,v1,v2,v3,v4,v5 --out results.json      # the whole golden set
+# Lecture 2
+python tools/opensearch_search.py "How many shares did Acme buy back last quarter?"  # BM25, k-NN, hybrid, rerank
+agentship run lecture2/v4.yaml --input "How many shares did Acme buy back last quarter?"
+python eval.py --agents v3,v4,v5
 ```
 
+The slides name `openai/gpt-4o-mini` (and the team's writer `anthropic/claude-sonnet-4-6`). The labs
+run every model call on `DEMO_MODEL`'s server instead, at `DEMO_TEMPERATURE` (0 by default, so a live
+demo repeats itself).
+
 On a self-hosted model, v0's first question processes the whole ~117K-token filing before it writes a
-word (about 10 minutes on the lecture server). Later questions reuse the server's prompt cache, so run
-v0 once before the talk.
+word (about 4 minutes on the lecture server). Later questions reuse the server's prompt cache, so run
+`run_all.ipynb` once before the talk.

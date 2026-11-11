@@ -1,19 +1,20 @@
-# Slide 39 · a coordinator routes each message to one specialist, using their descriptions.
+# Slide 62 · a coordinator routes to specialists, by their descriptions.
 #   agentship run agents/team.yaml --input "Compare Q3 and Q2 revenue."
-#   agentship serve --agents-dir agents     # then open http://127.0.0.1:8000/studio
+# The slide gives the analyst openai/gpt-4o-mini and the writer anthropic/claude-sonnet-4-6;
+# here every member runs on DEMO_MODEL's server.
 name: research-team
 engine: langgraph
 model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
-params: {reasoning_effort: none, max_tokens: 2048}   # this server's Qwen thinks by default
+params: {reasoning_effort: none, max_tokens: 2048}   # applies to the coordinator and inline members
 members:
-  - name: researcher
+  - name: analyst
+    description: arithmetic and comparisons over known numbers
+    model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
+  - name: writer
+    description: explanations, summaries
+    model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
+  - name: researcher   # a member needs a name, even with ref:
     ref: ./researcher.yaml
     description: facts and numbers from Acme's filings, including comparisons across quarters
-  - name: analyst
-    ref: ./analyst.yaml
-    description: arithmetic and comparisons over numbers already given in the message
-  - name: writer
-    description: greetings, thanks, and explanations that need prose but no facts from the filing
-    prompt: Answer in two clear sentences.
 observability:
   provider: otel

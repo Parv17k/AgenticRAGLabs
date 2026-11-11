@@ -15,7 +15,14 @@ plus input tokens, $ per query and p95 latency. The judge's own cost is reported
     python eval.py --agents v1 --ids q3_vs_q2_revenue,thanks   # a few questions
     python eval.py --agents v0,v1 "How did Acme's Q3 margin compare to Q2, and why?"
 
-v2 onwards run the AgentShip agents in agents/ (install with `pip install -e .`, Python 3.13+).
+    v0  the whole filing in every prompt                  (chapter 1)
+    v1  basic RAG, top 5 chunks                           (chapter 2)
+    v2  a LangGraph ReAct agent with search_docs          (chapter 3, agents/langgraph_agent.py)
+    v3  agentic RAG, served on AgentShip                  (chapters 4–5, agents/agentic_rag.yaml)
+    v4  v3 on OpenSearch hybrid search + rerank           (lecture 2, lecture2/v4.yaml)
+    v5  v4 tuned by configuration, as a team              (lecture 2, lecture2/v5/team.yaml)
+
+v3 onwards need AgentShip (`pip install -e .`, Python 3.13+); v4 and v5 need OpenSearch.
 golden.json has 14 questions; a real golden set
 has 200 to 500, with gold chunks labelled by people.
 """
@@ -29,6 +36,7 @@ import os
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -143,10 +151,20 @@ litellm.callbacks.append(METER)
 
 @lru_cache(maxsize=None)
 def agent(spec: str):
-    from agentship import build_agent  # only v2 onwards need AgentShip installed
+    from agentship import build_agent  # only v3 onwards need AgentShip installed
 
     os.chdir(HERE)  # code: references in the specs are relative to demos/
     return build_agent(str(HERE / spec))
+
+
+def _run_async(coro):
+    """asyncio.run, also from a notebook, where an event loop is already running."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    with ThreadPoolExecutor(1) as pool:
+        return pool.submit(asyncio.run, coro).result()
 
 
 def agentship_run(spec: str, question: str) -> Run:
@@ -156,7 +174,7 @@ def agentship_run(spec: str, question: str) -> Run:
     METER.on = True
     start = time.perf_counter()
     try:
-        result = asyncio.run(agent(spec).run(question))
+        result = _run_async(agent(spec).run(question))
     finally:
         METER.on = False
     hits = list({h["id"]: h for call in CALLS for h in call["hits"]}.values())  # first-seen order, no repeats
@@ -166,23 +184,42 @@ def agentship_run(spec: str, question: str) -> Run:
 
 
 def v2(question: str) -> Run:
-    """An agent team: a coordinator routes to a researcher that calls search_docs when it decides to."""
-    return agentship_run("agents/team.yaml", question)
+    """A LangGraph ReAct agent: it decides whether to call search_docs, and how many times."""
+    from langchain_core.messages import AIMessage
+
+    CALLS.clear()
+    start = time.perf_counter()
+    out = _v2_app().invoke({"messages": [("user", question)]}, {"recursion_limit": 10})
+    replies = [m for m in out["messages"] if isinstance(m, AIMessage)]
+    usage = [m.usage_metadata or {} for m in replies]
+    prompt_tokens = sum(u.get("input_tokens", 0) for u in usage)
+    completion_tokens = sum(u.get("output_tokens", 0) for u in usage)
+    hits = list({h["id"]: h for call in CALLS for h in call["hits"]}.values())
+    return Run(replies[-1].content, format_hits(hits), [h["text"] for h in hits], [c["query"] for c in CALLS],
+               retrieved=bool(CALLS), prompt_tokens=prompt_tokens, completion_tokens=completion_tokens,
+               cost=settings.price(prompt_tokens, completion_tokens), latency=time.perf_counter() - start)
+
+
+@lru_cache(maxsize=1)
+def _v2_app():
+    from agents.langgraph_agent import build_v2
+
+    return build_v2()
 
 
 def v3(question: str) -> Run:
-    """Agentic RAG: route, retrieve, grade, rewrite, verify, over v1's index."""
+    """Agentic RAG: route, retrieve, grade, rewrite, verify. The chapter 4 graph, served on AgentShip."""
     return agentship_run("agents/agentic_rag.yaml", question)
 
 
 def v4(question: str) -> Run:
-    """v3's graph with OpenSearch hybrid search + RRF + rerank behind search_docs."""
-    return agentship_run("agents/agentic_rag_v4.yaml", question)
+    """Lecture 2: v3's graph with OpenSearch hybrid search + RRF + rerank behind search_docs."""
+    return agentship_run("lecture2/v4.yaml", question)
 
 
 def v5(question: str) -> Run:
-    """v4 tuned by configuration: a team router, rerank to 3, fewer retries, less thinking."""
-    return agentship_run("agents_v5/team.yaml", question)
+    """Lecture 2: v4 tuned by configuration: a team router, rerank to 3, fewer retries."""
+    return agentship_run("lecture2/v5/team.yaml", question)
 
 
 VERSIONS = {"v0": v0, "v1": v1, "v2": v2, "v3": v3, "v4": v4, "v5": v5}

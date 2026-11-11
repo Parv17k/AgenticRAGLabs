@@ -2,4 +2,4 @@
 # and only the last 3 turns of history in the prompt.
 name: researcher-v5
 engine: langgraph
-code: agents/agentic_rag.py:build_v5   # tools: [search_docs_hybrid_top3]
+code: lecture2/agentic_rag_tuned.py:build_v5   # tools: [search_docs_hybrid_top3]
