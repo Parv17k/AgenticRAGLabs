@@ -1,0 +1,33 @@
+# Postgres keeps agent checkpoints across restarts (slide 40), Phoenix shows the traces (slide 41),
+# and OpenSearch is v4's hybrid index (slides 59-68).
+#   docker compose up -d
+#   agentship db upgrade --allow-migrations --database-url postgresql://agentship:agentship@localhost:5434/agentship
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: agentship
+      POSTGRES_PASSWORD: agentship
+      POSTGRES_DB: agentship
+    ports: ["5434:5432"]   # 5434, so it never collides with a Postgres you already run
+    volumes: [pgdata:/var/lib/postgresql/data]
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    environment:
+      PHOENIX_ENABLE_AUTH: "false"   # local demo only; recent images turn auth on by default
+    ports: ["6006:6006"]   # UI and OTLP/HTTP collector at http://localhost:6006
+  opensearch:
+    image: opensearchproject/opensearch:2.19.2   # 2.19+ for RRF; the opensearch-in-action 2.17 cluster also works
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"   # local demo only
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms1g -Xmx1g
+    ulimits:
+      memlock: {soft: -1, hard: -1}
+      nofile: {soft: 65536, hard: 65536}
+    ports: ["9200:9200"]
+    volumes: [osdata:/usr/share/opensearch/data]
+volumes:
+  pgdata:
+  osdata:

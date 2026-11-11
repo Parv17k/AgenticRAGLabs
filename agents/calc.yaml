@@ -1,0 +1,9 @@
+# Slide 35 · one agent, one tool.
+#   agentship run agents/calc.yaml --input "What is 17 times 23?"
+name: calculator-agent
+engine: langgraph
+template: single
+model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
+params: {reasoning_effort: none, max_tokens: 2048}   # this server's Qwen thinks by default
+prompt: Use the calculator for arithmetic. Answer with just the number.
+tools: [calculator]

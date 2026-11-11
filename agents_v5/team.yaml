@@ -1,0 +1,19 @@
+# Slide 81 · v5, most optimizations are configuration.
+#   agentship run agents_v5/team.yaml --input "Compare Q3 and Q2 revenue."
+#   python eval.py --agents v4,v5
+name: research-team-v5
+engine: langgraph
+model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
+params: {reasoning_effort: none, max_tokens: 2048}   # router and writer: small decisions, so no thinking
+members:
+  - name: researcher
+    ref: ./researcher.yaml
+    description: facts and numbers from Acme's filings, including comparisons across quarters and why they changed
+  - name: analyst
+    ref: ../agents/analyst.yaml
+    description: arithmetic and comparisons over numbers already given in the message
+  - name: writer
+    description: greetings, thanks, and general explanations that need no facts from the filing
+    prompt: Answer in at most two sentences.
+observability:
+  provider: otel

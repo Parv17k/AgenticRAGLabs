@@ -1,0 +1,100 @@
+[
+  {
+    "id": "q3_revenue",
+    "question": "What was Q3 revenue?",
+    "should_retrieve": true,
+    "gold": ["Total revenue was $4,212 million"],
+    "reference": "Q3 2026 revenue was $4.2B ($4,212 million), up 14.3% year over year."
+  },
+  {
+    "id": "q3_margin",
+    "question": "What was the Q3 operating margin?",
+    "should_retrieve": true,
+    "gold": [["Operating margin was 21.0% in the third quarter", "operating margin was 21.0%"]],
+    "reference": "Q3 2026 operating margin was 21.0%, up from 16.1% in Q3 2025."
+  },
+  {
+    "id": "q2_revenue",
+    "question": "What was Q2 2026 revenue?",
+    "should_retrieve": true,
+    "gold": ["Q2 revenue was $3.9B"],
+    "reference": "Q2 2026 revenue was $3.9B ($3,911 million), up 10.8% from Q2 2025."
+  },
+  {
+    "id": "q3_vs_q2_revenue",
+    "question": "Compare Q3 and Q2 revenue.",
+    "should_retrieve": true,
+    "gold": ["Total revenue was $4,212 million", "Q2 revenue was $3.9B"],
+    "reference": "Q3 revenue was $4,212 million versus $3,911 million in Q2, an increase of $301 million or about 7.7%."
+  },
+  {
+    "id": "q3_vs_q2_margin_why",
+    "question": "How did Acme's Q3 margin compare to Q2, and why?",
+    "should_retrieve": true,
+    "gold": ["Operating margin was 21.0% in the third quarter", "operating margin was 19.4%"],
+    "reference": "Operating margin rose to 21.0% in Q3 from 19.4% in Q2, about 1.6 points, mainly because data-center costs fell and higher Cloud Services revenue gave operating leverage."
+  },
+  {
+    "id": "cloud_revenue",
+    "question": "How much revenue did Cloud Services bring in this quarter?",
+    "should_retrieve": true,
+    "gold": [["Cloud Services revenue was $2,398 million", "Cloud Services 2,398"]],
+    "reference": "Cloud Services revenue was $2,398 million in Q3 2026, up 26.1% year over year."
+  },
+  {
+    "id": "backlog",
+    "question": "How big is Acme's contracted backlog?",
+    "should_retrieve": true,
+    "gold": ["remaining performance obligations were $21.6 billion"],
+    "reference": "Remaining performance obligations were $21.6 billion as of September 30, 2026, about 58% to be recognized in the next twelve months."
+  },
+  {
+    "id": "buyback",
+    "question": "How many shares did Acme buy back last quarter?",
+    "should_retrieve": true,
+    "gold": ["repurchased 2.4 million shares"],
+    "reference": "Acme repurchased 2.4 million shares for $412 million in Q3 2026, at an average price of $171.67."
+  },
+  {
+    "id": "lawsuit",
+    "question": "Is Acme being sued over its AI features?",
+    "should_retrieve": true,
+    "gold": ["putative class action"],
+    "reference": "Yes. In August 2026 a putative class action alleged that certain AI features processed customer data without adequate notice. Acme believes the claims lack merit."
+  },
+  {
+    "id": "fx",
+    "question": "How exposed is revenue to currency swings?",
+    "should_retrieve": true,
+    "gold": ["10% change in exchange rates"],
+    "reference": "A hypothetical 10% change in exchange rates would have changed Q3 revenue by about $148 million."
+  },
+  {
+    "id": "cash",
+    "question": "How much cash does Acme have?",
+    "should_retrieve": true,
+    "gold": ["$10.3 billion in cash"],
+    "reference": "$10.3 billion in cash, cash equivalents and short-term investments as of September 30, 2026, plus an undrawn $3.0 billion revolving credit facility."
+  },
+  {
+    "id": "vague",
+    "question": "how'd we do lately",
+    "should_retrieve": true,
+    "gold": [["Acme Corp reported strong growth", "Total revenue was $4,212 million"]],
+    "reference": "Q3 2026 was strong: revenue $4.2B, up 14.3% year over year, driven by cloud services, with operating margin up to 21.0%."
+  },
+  {
+    "id": "greeting",
+    "question": "Hi!",
+    "should_retrieve": false,
+    "gold": [],
+    "reference": "A short greeting. No facts from the filing are needed."
+  },
+  {
+    "id": "thanks",
+    "question": "Thanks, that helps!",
+    "should_retrieve": false,
+    "gold": [],
+    "reference": "A short acknowledgement. No facts from the filing are needed."
+  }
+]

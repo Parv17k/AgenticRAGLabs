@@ -1,0 +1,5 @@
+# Slide 51 · v3, agentic RAG as an AgentShip custom agent. The graph and its spec live in Python.
+#   agentship run agents/agentic_rag.yaml --input "How did Acme's Q3 margin compare to Q2, and why?"
+name: agentic-rag
+engine: langgraph
+code: agents/agentic_rag.py:build_v3   # tools: [search_docs], declared in build_v3

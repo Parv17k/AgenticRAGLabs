@@ -1,0 +1,57 @@
+"""Settings every demo shares, read from the environment and from demos/.env.
+
+Point DEMO_MODEL and OPENAI_API_BASE at any OpenAI-compatible server. Local models have no list
+price, so PRICE_AS names a model whose price stands in for the $ columns.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+import litellm
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_env(path: Path = ROOT / ".env") -> None:
+    """Load KEY=value lines into os.environ, never overwriting a variable already set."""
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        line = line.split(" #")[0].strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, value = line.split("=", 1)
+            if value.strip():
+                os.environ.setdefault(key.strip(), value.strip())
+
+
+load_env()
+
+MODEL = os.environ.get("DEMO_MODEL", "openai/gpt-4.1-mini")
+REASONING_EFFORT = os.environ.get("DEMO_REASONING_EFFORT") or None
+EMBED_MODEL = os.environ.get("DEMO_EMBED_MODEL", "openai/text-embedding-3-small")
+RERANK_MODEL = os.environ.get("DEMO_RERANK_MODEL") or None
+PRICE_AS = os.environ.get("PRICE_AS") or None
+API_BASE = (os.environ.get("OPENAI_API_BASE") or "https://api.openai.com/v1").rstrip("/")
+#: Extra arguments for every direct chat call, e.g. turning thinking off.
+LLM_KWARGS = {"reasoning_effort": REASONING_EFFORT} if REASONING_EFFORT else {}
+#: Some gateways (Cloudflare) refuse Python's default user agents.
+HEADERS = {"Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', '')}", "User-Agent": "agentic-rag-demos/0.1"}
+
+litellm.suppress_debug_info = True
+
+
+def price(prompt_tokens: int, completion_tokens: int, model: str = MODEL) -> float | None:
+    """$ for these tokens at the model's list price, else at PRICE_AS's; None if neither is known."""
+    for name in (model, PRICE_AS):
+        if not name:
+            continue
+        try:
+            inp, out = litellm.cost_per_token(model=name, prompt_tokens=prompt_tokens,
+                                              completion_tokens=completion_tokens)
+            if inp or out:
+                return inp + out
+        except Exception:  # not in LiteLLM's price list
+            continue
+    return None

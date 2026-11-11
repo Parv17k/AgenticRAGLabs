@@ -1,0 +1,15 @@
+# v2 · an agent with our RAG tool. It decides whether to search, and how many times.
+#   agentship run agents/researcher.yaml --input "Compare Q3 and Q2 revenue."
+name: researcher
+engine: langgraph
+template: single
+model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
+params: {reasoning_effort: none, max_tokens: 2048}   # this server's Qwen thinks by default
+tools: [search_docs]
+durability: checkpoint   # remembers the thread, and resumes it after a crash with Postgres
+prompt: |
+  You answer questions about Acme Corp's quarterly filing (Form 10-Q for Q3 2026).
+  Use search_docs for any Acme-specific fact, and search once per quarter or topic you need:
+  to compare Q3 with Q2, search for each quarter separately.
+  Answer only from what the searches return, name the section you used, and say so if the
+  filing does not contain the answer. Reply to greetings and thanks briefly, without searching.

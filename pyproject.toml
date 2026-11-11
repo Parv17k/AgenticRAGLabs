@@ -1,0 +1,28 @@
+[project]
+name = "agentic-rag-demos"
+version = "0.1.0"
+description = "Live demos for the NYU Agentic RAG guest lecture, from v0 (whole document) to v5 (optimized)."
+requires-python = ">=3.13"
+dependencies = [
+    "agentship-sdk[starter,service,observability]>=0.0.4",
+    "agentship-core[postgres]>=0.0.4",       # durable checkpoints in Postgres (docker compose up -d)
+    "agentship-langgraph[postgres]>=0.0.4",
+    "httpx",
+    "litellm",
+    "numpy",
+    "pandas",
+    "tiktoken",
+]
+
+# Lets an agent YAML say `tools: [search_docs]`, like a built-in tool.
+[project.entry-points."agentship.tools"]
+search_docs = "tools.agentship_tool:search_docs"
+search_docs_hybrid = "tools.agentship_tool:search_docs_hybrid"
+search_docs_hybrid_top3 = "tools.agentship_tool:search_docs_hybrid_top3"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["tools"]

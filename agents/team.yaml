@@ -1,0 +1,19 @@
+# Slide 39 · a coordinator routes each message to one specialist, using their descriptions.
+#   agentship run agents/team.yaml --input "Compare Q3 and Q2 revenue."
+#   agentship serve --agents-dir agents     # then open http://127.0.0.1:8000/studio
+name: research-team
+engine: langgraph
+model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
+params: {reasoning_effort: none, max_tokens: 2048}   # this server's Qwen thinks by default
+members:
+  - name: researcher
+    ref: ./researcher.yaml
+    description: facts and numbers from Acme's filings, including comparisons across quarters
+  - name: analyst
+    ref: ./analyst.yaml
+    description: arithmetic and comparisons over numbers already given in the message
+  - name: writer
+    description: greetings, thanks, and explanations that need prose but no facts from the filing
+    prompt: Answer in two clear sentences.
+observability:
+  provider: otel
