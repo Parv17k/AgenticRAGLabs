@@ -1,7 +1,7 @@
 # Agentic RAG Labs
 
-Laboratory materials for Lecture 1, *Foundations*, of the NYU course on agentic retrieval-augmented
-generation (RAG).
+Laboratory materials for Lecture 1, *Foundations*, of a university course on agentic
+retrieval-augmented generation (RAG).
 
 ## Overview
 

@@ -1,7 +1,7 @@
 [project]
 name = "agentic-rag-demos"
 version = "0.1.0"
-description = "Labs for the NYU Agentic RAG lecture: from the whole document (v0) to agentic RAG served on AgentShip (v3)."
+description = "Labs for a lecture on agentic RAG: from the whole document (v0) to agentic RAG served on AgentShip (v3)."
 requires-python = ">=3.13"
 dependencies = [
     "agentship-sdk[starter,service,observability]>=0.0.4",
