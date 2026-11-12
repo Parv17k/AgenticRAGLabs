@@ -100,10 +100,15 @@ def build_v3_graph(model, tools, verify: bool = True) -> StateGraph:
             reply = AIMessage(content="", tool_calls=[call])
         elif searches < MAX_SEARCHES:
             reply = llm.invoke([SystemMessage(content=system)] + history)
-        else:  # out of searches: no tools bound, so say why, or the model asks for one more search anyway
-            system += "\n\nYou have used every search for this question. Answer from the results above."
-            reply = model.invoke([SystemMessage(content=system)] + history)
-            if reply.tool_calls or "<tool_call>" in _text(reply):  # a real call (Gemini) or one as text (Qwen)
+        else:  # out of searches: hand over the results as plain text, with no tools and no tool calls in sight
+            turn = _this_turn(history)
+            earlier = [m for m in history[:len(history) - len(turn)]  # past questions and final answers only
+                       if isinstance(m, HumanMessage) or (isinstance(m, AIMessage) and not m.tool_calls)]
+            results = SEPARATOR.join(_text(m) for m in turn if isinstance(m, ToolMessage))
+            system += "\n\nYou have used every search for this question. Answer from the search results given."
+            ask_once = HumanMessage(content=f"{_text(turn[0])}\n\nSearch results:\n\n{results}")
+            reply = model.invoke([SystemMessage(content=system)] + earlier + [ask_once])
+            if reply.tool_calls or "<tool_call>" in _text(reply):  # a search anyway, as a call or as text
                 answer = _text(reply).split("<tool_call>")[0].strip()
                 reply = AIMessage(content=answer or "The filings' search results don't answer this.")
         update = {"messages": [reply], "note": None, "query": None}
