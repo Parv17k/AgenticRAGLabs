@@ -1,239 +1,239 @@
 # Agentic RAG Labs
 
-**NYU · Agentic RAG, Lecture 1: Foundations**
+Laboratory materials for Lecture 1, *Foundations*, of the NYU course on agentic retrieval-augmented
+generation (RAG).
 
-One company filing. One question. Four ways to answer it, each smarter than the last.
+## Overview
 
-> **The question:** *"How did Acme's Q3 margin compare to Q2, and why?"*
->
-> **The document:** Acme Corp's quarterly report (a synthetic Form 10-Q, about 100,000 tokens).
-> The Q3 numbers are in the main report. The Q2 numbers sit in an appendix near the end.
+The labs answer a single question about a single document with four successively more capable
+systems, so that each design can be compared directly against the previous one.
 
-That second line is the trap. A system that only finds Q3 will answer half the question and then
-say it can't find Q2. Watching each version fall into the trap, or avoid it, is the lecture.
+- **Document.** The quarterly report (Form 10-Q) of Acme Corp, a fictitious company, stored in
+  `data/acme_10q.txt`. It is approximately 100,000 tokens long.
+- **Question.** "How did Acme's Q3 margin compare to Q2, and why?"
 
----
+The Q3 figures appear in the main body of the report, while the Q2 figures appear only in an
+appendix near the end. Answering the question therefore requires information from two distant
+parts of the document, and this is where the simpler systems fail.
 
-## The four versions at a glance
+## The Four Versions
 
-| Version | Idea | What happens on our question |
+| Version | Approach | Behaviour on the question |
 |---|---|---|
-| **v0** · Whole document | Paste the entire filing into every prompt. | ✅ Right answer, but every question sends 107K tokens. |
-| **v1** · Basic RAG | Split the filing into chunks; send only the 5 closest to the question. | ❌ Finds Q3, misses the Q2 appendix, says it can't compare. |
-| **v2** · Agent | Give the model a search tool and let it decide what to look up. | ✅ Searches Q3, then Q2. But it can loop when the answer isn't there. |
-| **v3** · Agentic RAG | An agent that also *grades* what it found, *rewrites* bad searches, and *checks* its answer. | ✅ Right answer, and it knows when to stop and say "not in the filing". |
+| v0, whole document | The entire report is included in every prompt. | Answers correctly, but sends about 107,000 tokens per question. |
+| v1, basic RAG | The report is split into chunks, and only the five chunks most similar to the question are sent. | Retrieves the Q3 figures but not the Q2 appendix, and reports that it cannot make the comparison. |
+| v2, agent | The model receives a search tool and decides for itself what to search for. | Searches for Q3 and then for Q2, and answers correctly. It has no limit on searching, however, and can loop when the information does not exist. |
+| v3, agentic RAG | An agent that additionally grades the retrieved text, rewrites unsuccessful searches, and verifies its answer against the evidence. | Answers correctly, and states that the information is absent when the report does not contain it. |
 
-Then **Chapter 5** puts v3 into production with [AgentShip](https://github.com/Agent-Ship/agent-ship):
-an API, saved conversations that survive a server crash, and traces you can inspect.
+In Chapter 5, v3 is deployed with [AgentShip](https://github.com/Agent-Ship/agent-ship), which
+provides an HTTP API, conversation sessions that persist across server restarts, and execution
+traces.
 
-### Measured results
+## Results
 
-All four versions on the 14-question test set (`golden.json`), running on `gemini-3.5-flash`:
+The four versions were evaluated on the 14 questions in `golden.json` using `gemini-3.5-flash`.
 
-| Version | Correct | Input tokens / question | Cost / question | Typical time |
-|---|:---:|---:|---:|---:|
-| v0 · Whole document | **100%** | 106,800 | $0.161 | 2–4 s |
-| v1 · Basic RAG | 46% | 2,700 | $0.006 | 1–2 s |
-| v2 · Agent | 79% | 6,700 | $0.014 | 6–9 s |
-| v3 · Agentic RAG | **93%** | 11,800 | $0.020 | ~6 s |
+| Version | Correct | Input tokens per question | Cost per question (USD) | Typical latency |
+|---|---:|---:|---:|---:|
+| v0, whole document | 100% | 106,800 | 0.161 | 2 to 4 s |
+| v1, basic RAG | 46% | 2,700 | 0.006 | 1 to 2 s |
+| v2, agent | 79% | 6,700 | 0.014 | 6 to 9 s |
+| v3, agentic RAG | 93% | 11,800 | 0.020 | about 6 s |
 
-**How to read this:** v0 is accurate but expensive, at about 8× the cost of v3, and it gets worse as documents grow.
-v1 is cheap but misses whatever the top 5 chunks don't cover. v2 recovers most of the accuracy;
-the three questions it missed were loops it couldn't stop. v3 gets close to v0's accuracy at an
-eighth of the cost. Its one miss was an honest "I couldn't find it", not a made-up number.
+v0 is accurate but costs roughly eight times as much as v3 per question, and its cost grows with the
+length of the document. v1 is inexpensive but fails whenever the answer lies outside the five
+retrieved chunks. v2 recovers most of the accuracy; all three of its errors occurred when it reached
+its step limit without finishing. v3 approaches the accuracy of v0 at one eighth of the cost. Its
+single error was a question for which it did not find the relevant passage and said so, rather than
+producing an unsupported figure.
 
-Full answers and the judge's reasoning for every question are in `results_golden.json`.
+The answers and the evaluator's reasoning for every question are recorded in `results_golden.json`.
 
----
+## Correspondence with the Lecture Slides
 
-## Slides → labs
-
-| Chapter | Slides | What you build | Open this |
+| Chapter | Slides | Content | Material |
 |---|---|---|---|
-| 1 · Just upload the PDF | 12 | v0 | `v0_whole_doc.ipynb` |
-| 2 · Send only what matters | 23–24 | v1 | `v1_basic_rag.ipynb` |
-| 3 · Give the model judgment | 35–45 | v2, built step by step in LangGraph | `v2_langgraph_agent.ipynb` |
-| 4 · Search with judgment | 48–54 | v3: grade, rewrite, verify | `v3_agentic_rag.ipynb` |
-| 5 · Ship it | 59–65 | v3 as a service, a single agent, a team | `agents/*.yaml` + the commands below |
-| Finale | 68–69 | v0 → v3 side by side | `run_all.ipynb` |
+| 1. Just upload the PDF | 12 | v0 | `v0_whole_doc.ipynb` |
+| 2. Send only what matters | 23–24 | v1 | `v1_basic_rag.ipynb` |
+| 3. Give the model judgment | 35–45 | v2, built step by step in LangGraph | `v2_langgraph_agent.ipynb` |
+| 4. Search with judgment | 48–54 | v3: grading, rewriting and verification | `v3_agentic_rag.ipynb` |
+| 5. Ship it | 59–65 | v3 as a service, a single agent and a team | `agents/*.yaml` and the commands below |
+| Finale | 68–69 | Comparison of v0 to v3 | `run_all.ipynb` |
 
-Run the notebooks in order: each one starts where the previous one stopped.
-
----
+The notebooks are intended to be run in order, since each builds on the previous one.
 
 ## Setup
 
-You need **Python 3.13+**, a **Gemini API key**, and (for Chapter 5 only) **Docker**.
+The labs require Python 3.13 or later and a Gemini API key. Docker is required for Chapter 5 only.
 
-### 1. Get a Gemini API key
+### Step 1. Obtain a Gemini API key
 
-1. Go to [Google AI Studio → API keys](https://aistudio.google.com/apikey) and create a key.
-2. **Turn on billing** for the key's project in AI Studio.
-   The free tier allows only 5 requests a minute, and a single v3 question makes 5 to 10.
-   Running every notebook once costs about **$1.20**, most of it v0.
+1. Create a key at [Google AI Studio](https://aistudio.google.com/apikey).
+2. Enable billing for the key's project in AI Studio. The free tier permits only five requests per
+   minute, whereas a single v3 question makes between five and ten. Running every notebook once
+   costs approximately USD 1.20, most of it for v0.
 
-### 2. Install
+### Step 2. Install the software
 
 ```bash
-python3.13 -m venv .venv && source .venv/bin/activate
+python3.13 -m venv .venv
+source .venv/bin/activate
 pip install -e .
 
-# The latest AgentShip, straight from GitHub
 pip install "agentship-core @ git+https://github.com/Agent-Ship/agent-ship.git@main#subdirectory=packages/agentship-core" \
             "agentship-langgraph @ git+https://github.com/Agent-Ship/agent-ship.git@main#subdirectory=packages/agentship-langgraph"
 
-python -m ipykernel install --user --name agentic-rag-demos   # the kernel the notebooks use
+python -m ipykernel install --user --name agentic-rag-demos
 ```
 
-### 3. Add your key
+The second command installs the current version of AgentShip from GitHub. The last command
+registers the Jupyter kernel that the notebooks use.
+
+### Step 3. Configure the key
 
 ```bash
 cp .env.example .env
 ```
 
-Open `.env` and paste your key after `GEMINI_API_KEY=`. Everything else is already set.
-`.env` is in `.gitignore`, so your key never gets committed.
+Open `.env` and enter the key after `GEMINI_API_KEY=`. No other settings need to be changed.
+The file `.env` is listed in `.gitignore` and is never committed.
 
-### 4. Start the services (Chapter 5 only)
+### Step 4. Start the supporting services (Chapter 5 only)
 
 ```bash
-docker compose up -d   # Postgres (saved sessions) · Phoenix (traces) · OpenSearch (lecture 2)
+docker compose up -d
 agentship db upgrade --allow-migrations --database-url postgresql://agentship:agentship@localhost:5434/agentship
 ```
 
-The notebooks for Chapters 1–4 don't need Docker.
+This starts PostgreSQL, which stores agent sessions; Phoenix, which displays traces; and
+OpenSearch, which is used in Lecture 2.
 
----
+## Running the Labs
 
-## Running the labs
+### Chapters 1 to 4
 
-### Chapters 1–4: notebooks
+Open each notebook, select the `agentic-rag-demos` kernel, and run all cells in order.
 
-Open each notebook, choose the **agentic-rag-demos** kernel, and run all cells from the top.
-
-### Chapter 5: ship it
+### Chapter 5
 
 ```bash
-# Slide 59 · one agent, one tool
+# Slide 59: a single agent with one tool
 agentship run agents/calc.yaml --input "What is 17 times 23?"
 
-# Slide 60 · the v3 graph from Chapter 4, served unchanged
+# Slide 60: the v3 graph from Chapter 4, deployed without modification
 agentship run agents/agentic_rag.yaml --input "How did Acme's Q3 margin compare to Q2, and why?"
 
-# Slide 62 · a team: a coordinator routes each question to the right specialist
+# Slide 62: a team in which a coordinator assigns each question to a specialist
 agentship run agents/team.yaml --input "Compare Q3 and Q2 revenue."
 
-# Slide 65 · serve every agent as an API
+# Slide 65: serve all agents through an HTTP API
 agentship serve --agents-dir agents
 ```
 
-With the server running:
+While the server is running, the following are available:
 
-| What | Where |
+| Service | Location |
 |---|---|
-| Studio (chat with any agent) | http://127.0.0.1:8000/studio · key `dev-secret` |
-| Traces (every model call and search) | http://localhost:6006 |
-| REST API | `POST /v1/agents/agentic-rag:invoke` with `{"input": "...", "session_id": "..."}` |
+| AgentShip Studio, for conversing with any agent | http://127.0.0.1:8000/studio (key: `dev-secret`) |
+| Phoenix, for inspecting model calls and searches | http://localhost:6006 |
+| REST API | `POST /v1/agents/agentic-rag:invoke` with the body `{"input": "...", "session_id": "..."}` |
 
-Reuse the same `session_id` and the agent remembers the conversation, even after you stop and restart the server.
+Requests that share a `session_id` belong to the same conversation. The conversation is retained
+even if the server is stopped and restarted.
 
-### Finale: measure it
+### Evaluation
 
 ```bash
-# One question, every version, scored
+# Score every version on one question
 python eval.py --agents v0,v1,v2,v3 "How did Acme's Q3 margin compare to Q2, and why?"
 
-# The full 14-question test set (about 5 minutes, about $3)
+# Score every version on the full set of 14 questions (about 5 minutes and USD 3)
 python eval.py --agents v0,v1,v2,v3 --out results.json
 ```
 
-`eval.py` scores **retrieval** (did it find the right chunks?) separately from **generation** (is the
-answer faithful to what it found, and correct?). An LLM judge grades the answers.
+`eval.py` measures retrieval and generation separately. Retrieval is scored by whether the
+correct passages were found. Generation is scored by whether the answer is supported by the
+retrieved text and whether it agrees with the reference answer, as judged by a language model.
 
----
-
-## How v3 works
-
-```
-question ─→ agent ─┬─ no search needed (e.g. "Hi!") ────────────────────────→ verify ─→ answer
-                   │
-                   └─ search_docs ─→ grade each chunk
-                                       ├─ something relevant ──→ agent writes the answer
-                                       ├─ nothing relevant ────→ rewrite the query, search again
-                                       └─ still nothing, 2 tries later ─→ "The filings don't contain this."
-```
-
-- **grade** removes chunks that don't answer the search, so the agent can't build on bad evidence.
-- **rewrite** turns a vague question into the filing's own words. *"Work contracted but not yet
-  delivered"* becomes *"remaining performance obligations"*.
-- **verify** checks that every number in the answer appears in the evidence before it goes out.
-- Hard limits (2 rewrites, 4 searches) guarantee the loop always ends. That is the guarantee v2 lacks.
-
-The graph lives in `agents/agentic_rag.py`. The Chapter 4 notebook builds it cell by cell, and
-Chapter 5 serves the same function on AgentShip without changing a line.
-
----
-
-## What's in this folder
+## Design of v3
 
 ```
-v0_whole_doc.ipynb … v3_agentic_rag.ipynb   the four chapter notebooks
-run_all.ipynb                               the finale: v0 → v3 side by side
-agents/
-  langgraph_agent.py                        v2, the agent from Chapter 3
-  agentic_rag.py                            v3, the graph from Chapter 4, plus its AgentShip wrapper
-  agentic_rag.yaml, calc.yaml, team.yaml    the Chapter 5 agents (researcher.yaml is a team member)
-tools/
-  search_docs.py                            chunking, embeddings and search, shared by every version
-  settings.py                               reads .env: model, keys, prices
-data/acme_10q.txt                           the filing (make_acme_10q.py generates it)
-golden.json                                 14 test questions with reference answers
-eval.py                                     scores any version on golden.json
-results_golden.json                         the results in the table above
-lecture2/                                   v4 and v5, for Lecture 2 (hybrid search, reranking, tuning)
+question --> agent --+-- no search required ------------------------------> verify --> answer
+                     |
+                     +-- search --> grade the retrieved chunks
+                                      +-- relevant chunks found ----------> agent writes the answer
+                                      +-- none relevant -----------------> rewrite the query, search again
+                                      +-- none relevant after 2 rewrites -> report that the filing lacks it
 ```
 
----
+- **Grade.** Retrieved chunks that do not address the search are discarded, so the answer is
+  built only on relevant evidence.
+- **Rewrite.** A query that finds nothing relevant is rephrased in the terminology of the
+  report. For example, "work contracted but not yet delivered" becomes "remaining performance
+  obligations".
+- **Verify.** Before the answer is returned, each figure in it is checked against the evidence.
+- **Limits.** At most two rewrites and four searches are permitted per question, so the process
+  always terminates.
+
+The graph is defined in `agents/agentic_rag.py`. The Chapter 4 notebook constructs the same graph
+step by step, and Chapter 5 deploys that definition on AgentShip without modification.
+
+## Repository Structure
+
+| Path | Contents |
+|---|---|
+| `v0_whole_doc.ipynb` to `v3_agentic_rag.ipynb` | The notebooks for Chapters 1 to 4 |
+| `run_all.ipynb` | Side-by-side comparison of v0 to v3 |
+| `agents/langgraph_agent.py` | v2, the agent from Chapter 3 |
+| `agents/agentic_rag.py` | v3, the graph from Chapter 4, and its AgentShip wrapper |
+| `agents/*.yaml` | The Chapter 5 agents; `researcher.yaml` is a member of the team |
+| `tools/search_docs.py` | Chunking, embedding and search, shared by all versions |
+| `tools/settings.py` | Configuration read from `.env` |
+| `data/acme_10q.txt` | The report, generated by `data/make_acme_10q.py` |
+| `golden.json` | The 14 evaluation questions and their reference answers |
+| `eval.py` | The evaluation script |
+| `results_golden.json` | The results reported above |
+| `lecture2/` | v4 and v5, for Lecture 2 |
 
 ## Troubleshooting
 
-| You see | Why | Fix |
+| Symptom | Cause | Remedy |
 |---|---|---|
-| `429` or *"exceeded your current quota"* | The key's project is on the free tier. | Turn on billing in AI Studio. |
-| `402` *"prepayment credits are depleted"* | The project's prepaid balance is empty. | Add credits in AI Studio. |
-| `403` *"Gemini API has not been used in project…"* | The Gemini API is off for that project. | Open the link in the error and click **Enable**. Wait 2–3 minutes. |
-| `400` right after the agent's first search | The model is set to `openai/gemini-…`, which drops Gemini's tool-call signature. | Use `gemini/gemini-3.5-flash`, as in `.env.example`. |
-| v2 stops with `GraphRecursionError` | v2 has no search limit and can loop. | That's expected. It's the problem v3 solves. |
-| The first v3 run takes a minute; later runs take seconds | On a Mac, iCloud is syncing the folder, and Python waits on its files. | See the note below. |
-| v3 prints *"verify → unsupported claims"* and then repeats the same answer | The verify check is occasionally too strict. | Harmless: it costs one extra call. |
+| Error 429, "exceeded your current quota" | The project is on the free tier. | Enable billing in AI Studio. |
+| Error 402, "prepayment credits are depleted" | The project's prepaid balance is exhausted. | Add credit in AI Studio. |
+| Error 403, "Gemini API has not been used in project" | The Gemini API is disabled for the project. | Follow the link in the error message, enable the API, and wait a few minutes. |
+| Error 400 immediately after the agent's first search | The model is configured as `openai/gemini-...`, which discards information Gemini requires on tool calls. | Set the model to `gemini/gemini-3.5-flash`, as in `.env.example`. |
+| v2 stops with `GraphRecursionError` | v2 has no search limit and can loop. | This is expected; it is the limitation that v3 addresses. |
+| The first v3 run takes about a minute and later runs take seconds | On macOS, iCloud Drive is synchronising the folder and delays file access. | See the note below. |
+| v3 reports "unsupported claims" and then repeats the same answer | The verification step is occasionally too strict. | No action is needed; the cost is one additional model call. |
 
-**On a Mac with iCloud Drive:** if this folder is under Desktop or Documents, iCloud may hold or
-evict files while it syncs them. Rename the environment to `.venv.nosync` and link `.venv` to it
-(`mv .venv .venv.nosync && ln -s .venv.nosync .venv`), and set the workshop folder to
-**Keep Downloaded**.
+**Note for macOS users.** If this folder is located under Desktop or Documents and iCloud Drive is
+enabled, iCloud may delay or remove local files during synchronisation. Move the virtual
+environment out of synchronisation with `mv .venv .venv.nosync && ln -s .venv.nosync .venv`, and
+set the folder to **Keep Downloaded** in Finder.
 
----
+## Using a Different Model
 
-## Using a different model
+All model settings are read from `.env`.
 
-Every lab reads its model from `.env`, so you can point it anywhere:
-
-- **Any OpenAI-compatible server** (OpenAI, a local Ollama or llama.cpp server, a gateway): set
-  `OPENAI_API_KEY`, `OPENAI_API_BASE`, `DEMO_MODEL=openai/<model>`,
+- **OpenAI-compatible servers**, including OpenAI itself and local servers such as Ollama or
+  llama.cpp: set `OPENAI_API_KEY`, `OPENAI_API_BASE`, `DEMO_MODEL=openai/<model>`,
   `DEMO_EMBED_MODEL=openai/<embedding model>` and `DEMO_TEMPERATURE=0`.
-- **A local model** has no list price, so set `PRICE_AS` to a model whose prices should fill the $ columns.
-- **The agent YAMLs** in `agents/` name their model directly. Change `model:` there too.
+- **Local models** have no published price. Set `PRICE_AS` to the model whose prices should be used
+  in the cost columns.
+- **Agent definitions.** The YAML files in `agents/` specify their model directly, so the `model:`
+  field must also be changed there.
 
-The slides show `openai/gpt-4o-mini` (and `anthropic/claude-sonnet-4-6` for the team's writer).
-The labs use one model everywhere so that the results are easy to compare.
+The slides refer to `openai/gpt-4o-mini`, and to `anthropic/claude-sonnet-4-6` for the team's
+writer. The labs use a single model throughout so that the results remain comparable.
 
-On a self-hosted model, v0's first question has to read the whole filing before it writes anything,
-which can take minutes. Run `run_all.ipynb` once before a live demo to warm the server's cache.
-
----
+With a self-hosted model, the first v0 question must process the entire report before producing
+any output, which can take several minutes. Running `run_all.ipynb` once before a live
+demonstration warms the server's cache.
 
 ## Lecture 2
 
-`lecture2/` and `tools/opensearch_search.py` continue the story: **v4** runs v3 on OpenSearch hybrid
-search (keywords and vectors) with reranking, and **v5** tunes it into a team. They need the OpenSearch
-container from `docker compose up -d`, and an index built with the same embedding model as in your `.env`.
+The directory `lecture2/` and the script `tools/opensearch_search.py` support Lecture 2. v4 runs
+v3 on OpenSearch hybrid search, which combines keyword and vector retrieval, with reranking; v5
+tunes it as a team. Both require the OpenSearch container started by `docker compose up -d` and an
+index built with the embedding model configured in `.env`.
