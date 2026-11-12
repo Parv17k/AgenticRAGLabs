@@ -40,14 +40,20 @@ git clone -b fix/supervisor-turn-state-and-tools-default https://github.com/Agen
 pip install -e ../agent-ship/packages/agentship-core -e ../agent-ship/packages/agentship-langgraph
 ```
 
-Any OpenAI-compatible server works: set `OPENAI_API_BASE`, `DEMO_MODEL`, `DEMO_EMBED_MODEL` and,
-for lecture 2, `DEMO_RERANK_MODEL` (a `/reranking` model on the same server). A local model has no list
-price, so `PRICE_AS` names the model whose price fills the $ columns. The agent YAMLs name their model
-directly; change `model:` there too if you switch.
+The labs run on `gemini/gemini-3.5-flash`: put a Gemini API key in `GEMINI_API_KEY`, on a project
+with billing (the free tier's 5 requests a minute is too few for v3). Gemini 3 needs a "thought
+signature" sent back with every tool call, so the labs reach it through LiteLLM's `gemini/` provider,
+never Google's OpenAI-compatible endpoint, which loses the signature and rejects the next turn.
+
+Any OpenAI-compatible server works too: set `OPENAI_API_BASE`, `DEMO_MODEL=openai/<model>`,
+`DEMO_EMBED_MODEL` and, for lecture 2, `DEMO_RERANK_MODEL` (a `/reranking` model on the same server).
+A local model has no list price, so `PRICE_AS` names the model whose price fills the $ columns. The
+agent YAMLs name their model directly; change `model:` there too if you switch.
 
 If this folder is synced by iCloud Drive (Desktop & Documents on a Mac), make the environment
-`.venv.nosync` with `.venv` as a symlink to it, and set the workshop folder to **Keep Downloaded**.
-iCloud otherwise evicts files, and reads from them stall.
+`.venv.nosync` with `.venv` as a symlink to it, do the same for the `../agent-ship` clone, and set the
+workshop folder to **Keep Downloaded**. iCloud otherwise evicts or holds files, and reads from them
+stall: a v3 run that normally starts in 3 seconds can take over a minute while Python waits on them.
 
 ## Running each demo
 
@@ -72,8 +78,8 @@ python eval.py --agents v3,v4,v5
 ```
 
 The slides name `openai/gpt-4o-mini` (and the team's writer `anthropic/claude-sonnet-4-6`). The labs
-run every model call on `DEMO_MODEL`'s server instead, at `DEMO_TEMPERATURE` (0 by default, so a live
-demo repeats itself).
+run every model call on `DEMO_MODEL` instead, at `DEMO_TEMPERATURE` (`default` for Gemini; 0 on a
+self-hosted model, so a live demo repeats itself).
 
 On a self-hosted model, v0's first question processes the whole ~117K-token filing before it writes a
 word (about 4 minutes on the lecture server). Later questions reuse the server's prompt cache, so run

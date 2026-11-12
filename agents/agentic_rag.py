@@ -25,7 +25,7 @@ from agentship_langgraph import LangGraphAgent
 from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage, SystemMessage, ToolMessage
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
-from tools.settings import API_BASE, HEADERS, MODEL, REASONING_EFFORT, RERANK_MODEL, TEMPERATURE
+from tools.settings import API_BASE, DETERMINISTIC, HEADERS, MODEL, REASONING_EFFORT, RERANK_MODEL, TEMPERATURE
 
 PROMPT = """You answer questions about Acme Corp's quarterly filing (Form 10-Q for Q3 2026).
 Use search_docs for any Acme-specific fact or number, once per quarter or topic you need: to
@@ -82,7 +82,7 @@ def relevant(query: str, passages: list[str], ask) -> list[bool]:
 def build_v3_graph(model, tools, verify: bool = True) -> StateGraph:
     """The chapter 4 graph over any chat model and the search_docs tool."""
     llm = model.bind_tools(tools)
-    judge = model.bind(temperature=0)  # the small decisions should not be a coin toss
+    judge = model.bind(**DETERMINISTIC)  # the small decisions should not be a coin toss
 
     def ask(prompt: str) -> str:  # the small decisions: grade, rewrite, verify
         return _text(judge.invoke([HumanMessage(content=prompt)])).strip()
@@ -100,10 +100,10 @@ def build_v3_graph(model, tools, verify: bool = True) -> StateGraph:
             reply = AIMessage(content="", tool_calls=[call])
         elif searches < MAX_SEARCHES:
             reply = llm.invoke([SystemMessage(content=system)] + history)
-        else:  # out of searches: no tools bound, so say why, or the model writes a search as text
+        else:  # out of searches: no tools bound, so say why, or the model asks for one more search anyway
             system += "\n\nYou have used every search for this question. Answer from the results above."
             reply = model.invoke([SystemMessage(content=system)] + history)
-            if "<tool_call>" in _text(reply):
+            if reply.tool_calls or "<tool_call>" in _text(reply):  # a real call (Gemini) or one as text (Qwen)
                 answer = _text(reply).split("<tool_call>")[0].strip()
                 reply = AIMessage(content=answer or "The filings' search results don't answer this.")
         update = {"messages": [reply], "note": None, "query": None}

@@ -2,8 +2,8 @@
 #   agentship run agents/researcher.yaml --input "Compare Q3 and Q2 revenue."
 name: researcher
 engine: langgraph
-model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
-params: {reasoning_effort: none, max_tokens: 2048}   # this server's Qwen thinks by default
+model: gemini/gemini-3.5-flash
+params: {reasoning_effort: none, max_tokens: 2048}   # no thinking: faster and cheaper
 tools: [search_docs]
 durability: checkpoint   # remembers the thread, and resumes it after a crash with Postgres
 prompt: |

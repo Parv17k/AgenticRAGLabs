@@ -135,7 +135,8 @@ class Meter(CustomLogger):
         usage = getattr(response, "usage", None)
         self.prompt_tokens += getattr(usage, "prompt_tokens", 0) or 0
         self.completion_tokens += getattr(usage, "completion_tokens", 0) or 0
-        self.cost += kwargs.get("response_cost") or settings.price(
+        # list price, as for v0–v2 (LiteLLM's response_cost would subtract Gemini's cache discount)
+        self.cost += settings.price(
             getattr(usage, "prompt_tokens", 0) or 0, getattr(usage, "completion_tokens", 0) or 0) or 0.0
 
     def log_success_event(self, kwargs, response_obj, start_time, end_time) -> None:
@@ -271,7 +272,7 @@ def judge(item: dict, run: Run) -> tuple[float | None, float | None, str, float]
     resp, cost, _ = complete([{"role": "user", "content": JUDGE_PROMPT.format(
         context=context, question=item["question"],
         reference=item.get("reference") or "(none: skip step 2 and return null)", answer=run.answer[:8000])}],
-        model=JUDGE_MODEL, temperature=0)
+        model=JUDGE_MODEL, **settings.DETERMINISTIC)
     text = resp.choices[0].message.content or ""
     verdict = json.loads(re.search(r"\{.*\}", text, re.S).group())
     claims = verdict.get("claims") or []

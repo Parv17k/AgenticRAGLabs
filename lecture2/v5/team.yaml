@@ -3,7 +3,7 @@
 #   python eval.py --agents v3,v4,v5
 name: research-team-v5
 engine: langgraph
-model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
+model: gemini/gemini-3.5-flash
 params: {reasoning_effort: none, max_tokens: 2048}   # router and writer: small decisions, so no thinking
 members:
   - name: researcher

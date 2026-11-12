@@ -1,8 +1,8 @@
-# Slide 59 · one agent, one tool. The slide's model is openai/gpt-4o-mini; this runs on DEMO_MODEL's server.
+# Slide 59 · one agent, one tool. The slide's model is openai/gpt-4o-mini; here gemini-3.5-flash (GEMINI_API_KEY).
 #   agentship run agents/calc.yaml --input "What is 17 times 23?"
 name: calculator-agent
 engine: langgraph
-model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
-params: {reasoning_effort: none, max_tokens: 2048}   # this server's Qwen thinks by default
+model: gemini/gemini-3.5-flash
+params: {reasoning_effort: none, max_tokens: 2048}   # no thinking: faster and cheaper
 prompt: Use the calculator for arithmetic. Answer with just the number.
 tools: [calculator]

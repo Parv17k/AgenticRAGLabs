@@ -2,7 +2,7 @@
 name: analyst
 engine: langgraph
 template: single
-model: openai/Qwen3.6-35B-A3B-MTP-GGUF-UD-Q4_K_M
-params: {reasoning_effort: none, max_tokens: 2048}   # this server's Qwen thinks by default
+model: gemini/gemini-3.5-flash
+params: {reasoning_effort: none, max_tokens: 2048}   # no thinking: faster and cheaper
 tools: [calculator]
 prompt: Use the calculator for every calculation. Answer with the number and one short sentence.
