@@ -1,5 +1,5 @@
-# Postgres keeps agent checkpoints across restarts (slide 40), Phoenix shows the traces (slide 41),
-# and OpenSearch is v4's hybrid index (slides 59-68).
+# Chapter 5: Postgres keeps agent sessions across restarts, Phoenix shows the traces,
+# and OpenSearch is lecture 2's hybrid index.
 #   docker compose up -d
 #   agentship db upgrade --allow-migrations --database-url postgresql://agentship:agentship@localhost:5434/agentship
 services:

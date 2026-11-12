@@ -10,7 +10,8 @@ dependencies = [
     "httpx",
     "ipykernel",
     "langchain>=1.0",                        # init_chat_model, create_agent (chapter 3)
-    "langchain-openai>=1.0",                 # the OpenAI-compatible chat model behind init_chat_model
+    "langchain-litellm",                     # init_chat_model("litellm:gemini/..."), which keeps Gemini tool calls working
+    "langchain-openai>=1.0",                 # init_chat_model("openai:..."), for OpenAI-compatible servers
     "langgraph>=1.0",
     "litellm",
     "numpy",
