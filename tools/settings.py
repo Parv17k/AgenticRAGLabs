@@ -15,15 +15,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_env(path: Path = ROOT / ".env") -> None:
-    """Load KEY=value lines into os.environ, never overwriting a variable already set."""
+    """Load KEY=value lines into os.environ, never overwriting a variable already set.
+
+    VS Code loads .env into notebooks itself and keeps a trailing "# comment" in the value; drop it.
+    """
     if not path.exists():
         return
     for line in path.read_text().splitlines():
         line = line.split(" #")[0].strip()
         if line and not line.startswith("#") and "=" in line:
             key, value = line.split("=", 1)
+            key = key.strip()
+            if " #" in os.environ.get(key, ""):
+                os.environ[key] = os.environ[key].split(" #")[0].strip()
             if value.strip():
-                os.environ.setdefault(key.strip(), value.strip())
+                os.environ.setdefault(key, value.strip())
 
 
 load_env()

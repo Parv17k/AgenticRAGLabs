@@ -97,6 +97,8 @@ cp .env.example .env
 
 Open `.env` and enter the key after `GEMINI_API_KEY=`. No other settings need to be changed.
 The file `.env` is listed in `.gitignore` and is never committed.
+Keep comments in `.env` on lines of their own: VS Code loads the file into notebooks itself and
+treats anything after the `=` as part of the value.
 
 ### Step 4. Start the supporting services (Chapter 5 only)
 
