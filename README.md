@@ -1,9 +1,47 @@
-# Agentic RAG Labs
+<div align="center">
 
-Laboratory materials for Lecture 1, *Foundations*, of a university course on agentic
-retrieval-augmented generation (RAG).
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:6366f1,50:8b5cf6,100:ec4899&height=200&section=header&text=Agentic%20RAG%20Labs&fontSize=50&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=From%20stuffing%20the%20whole%20document%20to%20an%20agent%20that%20knows%20when%20to%20search&descAlignY=58&descSize=14" alt="Agentic RAG Labs" width="100%" />
 
-## Overview
+### Four RAG systems. One question. One document. Measured side by side.
+
+<p>
+  <img src="https://img.shields.io/badge/Python-3.13+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.13+" />
+  <img src="https://img.shields.io/badge/LangGraph-agent%20graphs-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white" alt="LangGraph" />
+  <img src="https://img.shields.io/badge/Gemini-3.5%20Flash-4285F4?style=for-the-badge&logo=googlegemini&logoColor=white" alt="Gemini 3.5 Flash" />
+  <img src="https://img.shields.io/badge/AgentShip-deploy-FF6B35?style=for-the-badge&logo=rocket&logoColor=white" alt="AgentShip" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/OpenSearch-hybrid%20search-005EB8?style=for-the-badge&logo=opensearch&logoColor=white" alt="OpenSearch" />
+  <img src="https://img.shields.io/badge/Docker-compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Jupyter-notebooks-F37626?style=for-the-badge&logo=jupyter&logoColor=white" alt="Jupyter" />
+  <img src="https://img.shields.io/badge/Phoenix-tracing-9A4DFF?style=for-the-badge&logo=arrow&logoColor=white" alt="Phoenix" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/accuracy-93%25-brightgreen?style=flat-square" alt="Accuracy 93%" />
+  <img src="https://img.shields.io/badge/cost%2Fquestion-%240.020-blue?style=flat-square" alt="Cost per question" />
+  <img src="https://img.shields.io/badge/golden%20set-14%20questions-orange?style=flat-square" alt="Golden set" />
+  <img src="https://img.shields.io/badge/lectures-1%20%26%202-8b5cf6?style=flat-square" alt="Lectures 1 and 2" />
+</p>
+
+<p>
+  <a href="#-the-four-versions">Four Versions</a> ·
+  <a href="#-results">Results</a> ·
+  <a href="#-setup">Setup</a> ·
+  <a href="#-design-of-v3">Design of v3</a> ·
+  <a href="#-troubleshooting">Troubleshooting</a> ·
+  <a href="#-contributors">Contributors</a>
+</p>
+
+</div>
+
+---
+
+> **TL;DR** — Laboratory materials for Lecture 1, *Foundations*, of a university course on
+> agentic retrieval-augmented generation (RAG). Build v0 → v3, then ship v3 as an API.
+
+## 📖 Overview
 
 The labs answer a single question about a single document with four successively more capable
 systems, so that each design can be compared directly against the previous one.
@@ -16,7 +54,7 @@ The Q3 figures appear in the main body of the report, while the Q2 figures appea
 appendix near the end. Answering the question therefore requires information from two distant
 parts of the document, and this is where the simpler systems fail.
 
-## The Four Versions
+## ✨ The Four Versions
 
 | Version | Approach | Behaviour on the question |
 |---|---|---|
@@ -29,7 +67,7 @@ In Chapter 5, v3 is deployed with [AgentShip](https://github.com/Agent-Ship/agen
 provides an HTTP API, conversation sessions that persist across server restarts, and execution
 traces.
 
-## Results
+## 📊 Results
 
 The four versions were evaluated on the 14 questions in `golden.json` using `gemini-3.5-flash`.
 
@@ -49,7 +87,7 @@ producing an unsupported figure.
 
 The answers and the evaluator's reasoning for every question are recorded in `results_golden.json`.
 
-## Correspondence with the Lecture Slides
+## 🎓 Correspondence with the Lecture Slides
 
 | Chapter | Slides | Content | Material |
 |---|---|---|---|
@@ -62,7 +100,7 @@ The answers and the evaluator's reasoning for every question are recorded in `re
 
 The notebooks are intended to be run in order, since each builds on the previous one.
 
-## Setup
+## 🚀 Setup
 
 The labs require Python 3.13 or later and a Gemini API key. Docker is required for Chapter 5 only.
 
@@ -110,7 +148,7 @@ agentship db upgrade --allow-migrations --database-url postgresql://agentship:ag
 This starts PostgreSQL, which stores agent sessions; Phoenix, which displays traces; and
 OpenSearch, which is used in Lecture 2.
 
-## Running the Labs
+## ▶️ Running the Labs
 
 ### Chapters 1 to 4
 
@@ -157,7 +195,7 @@ python eval.py --agents v0,v1,v2,v3 --out results.json
 correct passages were found. Generation is scored by whether the answer is supported by the
 retrieved text and whether it agrees with the reference answer, as judged by a language model.
 
-## Design of v3
+## 🧠 Design of v3
 
 ```
 question --> agent --+-- no search required ------------------------------> verify --> answer
@@ -180,7 +218,7 @@ question --> agent --+-- no search required ------------------------------> veri
 The graph is defined in `agents/agentic_rag.py`. The Chapter 4 notebook constructs the same graph
 step by step, and Chapter 5 deploys that definition on AgentShip without modification.
 
-## Repository Structure
+## 🗂️ Repository Structure
 
 | Path | Contents |
 |---|---|
@@ -197,7 +235,7 @@ step by step, and Chapter 5 deploys that definition on AgentShip without modific
 | `results_golden.json` | The results reported above |
 | `lecture2/` | v4 and v5, for Lecture 2 |
 
-## Troubleshooting
+## 🩺 Troubleshooting
 
 | Symptom | Cause | Remedy |
 |---|---|---|
@@ -214,7 +252,7 @@ enabled, iCloud may delay or remove local files during synchronisation. Move the
 environment out of synchronisation with `mv .venv .venv.nosync && ln -s .venv.nosync .venv`, and
 set the folder to **Keep Downloaded** in Finder.
 
-## Using a Different Model
+## 🔧 Using a Different Model
 
 All model settings are read from `.env`.
 
@@ -233,9 +271,39 @@ With a self-hosted model, the first v0 question must process the entire report b
 any output, which can take several minutes. Running `run_all.ipynb` once before a live
 demonstration warms the server's cache.
 
-## Lecture 2
+## 🔭 Lecture 2
 
 The directory `lecture2/` and the script `tools/opensearch_search.py` support Lecture 2. v4 runs
 v3 on OpenSearch hybrid search, which combines keyword and vector retrieval, with reranking; v5
 tunes it as a team. Both require the OpenSearch container started by `docker compose up -d` and an
 index built with the embedding model configured in `.env`.
+
+---
+
+## 👥 Contributors
+
+Thanks to everyone who has shaped these labs.
+
+<div align="center">
+
+<a href="https://github.com/Parv17k/AgenticRAGLabs/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Parv17k/AgenticRAGLabs" alt="Contributors" />
+</a>
+
+| Contributor | Role |
+|---|---|
+| [**@Parv17k**](https://github.com/Parv17k) | Author and maintainer — labs, agents, evaluation harness |
+| [**@harshuljain13**](https://github.com/harshuljain13) | Author and maintainer — labs, agents, evaluation harness |
+
+</div>
+
+Contributions are welcome. Open an issue to discuss a change, or send a pull request with
+a short description of what it improves.
+
+<div align="center">
+
+<sub>Built for the agentic RAG lecture series · <a href="https://github.com/Agent-Ship/agent-ship">AgentShip</a> · <a href="https://github.com/Parv17k/AgenticRAGLabs">Repository</a></sub>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:ec4899,50:8b5cf6,100:6366f1&height=120&section=footer" alt="" width="100%" />
+
+</div>
