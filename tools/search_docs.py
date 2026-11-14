@@ -1,7 +1,9 @@
 """search_docs: the retrieval tool every version from Module 2 on uses.
 
 Chunks the Acme 10-Q exactly as the v1 notebook does (paragraph-aware, size=500, overlap=50),
-embeds the chunks once, and caches the index in data/.index/ so later runs start instantly.
+embeds the chunks once, and caches the vectors in data/.index/ so later runs start instantly.
+The vectors are loaded into Chroma, an in-memory vector database (Module 2 builds the same
+collection by hand), and each search is a Chroma query.
 v1 calls it on every message; the agents in v2 and later call it as a tool when they decide to
 (tools/agentship_tool.py registers it with AgentShip under the name search_docs).
 v4 keeps this signature and swaps the body for OpenSearch hybrid search.
@@ -14,8 +16,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import threading
 from functools import lru_cache
 
+import chromadb
 import litellm
 import numpy as np
 import tiktoken
@@ -94,17 +98,39 @@ def load_index() -> tuple[list[dict], np.ndarray]:
     return chunks, vectors
 
 
+_building = threading.Lock()
+
+
+@lru_cache(maxsize=1)
+def _collection() -> chromadb.Collection:
+    chunks, vectors = load_index()
+    db = chromadb.EphemeralClient(settings=chromadb.Settings(anonymized_telemetry=False))
+    collection = db.get_or_create_collection("search_docs", metadata={"hnsw:space": "cosine"})
+    collection.upsert(ids=[str(i) for i in range(len(chunks))], embeddings=vectors.tolist(),
+                      documents=[c["text"] for c in chunks], metadatas=[{"section": label(c)} for c in chunks])
+    return collection
+
+
+def load_collection() -> chromadb.Collection:
+    """The cached chunks and vectors in a Chroma collection: in memory, no server, no telemetry.
+
+    Built once per process. The lock matters when an agent's first turn runs two searches at once:
+    two threads creating Chroma clients together break each other.
+    """
+    with _building:
+        return _collection()
+
+
 #: Every call made in this process, oldest first, so eval.py can see what an agent searched for.
 CALLS: list[dict] = []
 
 
 def search_docs(query: str, k: int = 5) -> list[dict]:
     """Search Acme filings (10-Q). Use for Acme-specific numbers."""
-    chunks, vectors = load_index()
-    scores = vectors @ embed([QUERY_PREFIX + query])[0]
-    top = np.argsort(-scores)[:k]
-    hits = [{"id": int(i), "section": label(chunks[i]), "score": round(float(scores[i]), 3),
-             "text": chunks[i]["text"]} for i in top]
+    found = load_collection().query(query_embeddings=[embed([QUERY_PREFIX + query])[0].tolist()], n_results=k)
+    hits = [{"id": int(i), "section": meta["section"], "score": round(1 - distance, 3), "text": text}
+            for i, distance, meta, text in zip(found["ids"][0], found["distances"][0],
+                                               found["metadatas"][0], found["documents"][0])]
     CALLS.append({"query": query, "hits": hits})
     return hits
 

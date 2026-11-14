@@ -7,6 +7,7 @@ dependencies = [
     "agentship-sdk[starter,service,observability]>=0.0.4",
     "agentship-core[postgres]>=0.0.4",       # durable checkpoints in Postgres (docker compose up -d)
     "agentship-langgraph[postgres]>=0.0.4",
+    "chromadb",                              # the in-memory vector database behind search_docs (Module 2 on)
     "httpx",
     "ipykernel",
     "langchain>=1.0",                        # init_chat_model, create_agent (chapter 3)
@@ -14,6 +15,7 @@ dependencies = [
     "langchain-openai>=1.0",                 # init_chat_model("openai:..."), for OpenAI-compatible servers
     "langgraph>=1.0",
     "litellm",
+    "matplotlib",                            # the cost and token charts in Modules 1, 2 and 4
     "numpy",
     "pandas",
     "tiktoken",

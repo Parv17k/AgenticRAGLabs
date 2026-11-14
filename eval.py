@@ -50,7 +50,7 @@ from litellm.integrations.custom_logger import CustomLogger
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from tools import settings # noqa: E402 (loads .env)
-from tools.search_docs import CALLS, DOC, format_hits, load_index, search_docs # noqa: E402
+from tools.search_docs import CALLS, DOC, format_hits, load_collection, search_docs # noqa: E402
 
 MODEL = settings.MODEL
 JUDGE_MODEL = os.environ.get("JUDGE_MODEL", MODEL)
@@ -324,7 +324,7 @@ def main() -> None:
     else:
         items = [g for g in golden if not args.ids or g["id"] in args.ids.split(",")]
 
-    load_index() # build or load the chunk index up front so it doesn't count as latency
+    load_collection() # build or load the index, in Chroma, up front so it doesn't count as latency
     rows = []
     for version in versions:
         for item in items:

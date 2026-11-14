@@ -19,7 +19,7 @@ from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from tools.search_docs import format_hits
 from tools.search_docs import search_docs as search_index
-from tools.settings import CHAT_MODEL, LLM_KWARGS
+from tools.settings import CHAT_KWARGS, CHAT_MODEL
 
 
 @tool
@@ -37,7 +37,7 @@ SYSTEM = SystemMessage(content=(
 
 def build_v2(model=None, checkpointer=None):
     """The ReAct graph, compiled. A checkpointer gives it memory per thread_id."""
-    model = model or init_chat_model(CHAT_MODEL, **LLM_KWARGS)
+    model = model or init_chat_model(CHAT_MODEL, **CHAT_KWARGS)
     tools = [search_docs]
     llm = model.bind_tools(tools)
 

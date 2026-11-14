@@ -54,6 +54,11 @@ LLM_KWARGS = {"max_tokens": 4096} | ({"temperature": TEMPERATURE} if TEMPERATURE
 #: provider through LiteLLM, e.g. "litellm:gemini/gemini-3.5-flash", which keeps Gemini's thought
 #: signatures on tool calls (without them Gemini 3 rejects the turn after a tool call).
 CHAT_MODEL = MODEL.replace("/", ":", 1) if MODEL.startswith("openai/") else f"litellm:{MODEL}"
+#: LLM_KWARGS as init_chat_model(CHAT_MODEL, **CHAT_KWARGS) takes them. ChatLiteLLM has no
+#: reasoning_effort field and silently drops it, so it travels in model_kwargs (else Gemini thinks).
+CHAT_KWARGS = LLM_KWARGS if MODEL.startswith("openai/") else (
+    {k: v for k, v in LLM_KWARGS.items() if k != "reasoning_effort"}
+    | ({"model_kwargs": {"reasoning_effort": REASONING_EFFORT}} if REASONING_EFFORT else {}))
 #: Some gateways (Cloudflare) refuse Python's default user agents.
 HEADERS = {"Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', '')}", "User-Agent": "agentic-rag-demos/0.1"}
 

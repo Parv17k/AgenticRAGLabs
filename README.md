@@ -55,10 +55,10 @@ The lecture slides that go with them are
 
 | # | Module | The idea | What happens | Accuracy | Cost/q |
 |---|---|---|---|---:|---:|
-| **1** | [Just upload the PDF](demos/module_1_just_upload_the_pdf.ipynb) | Put the whole report in every prompt. | Right answer — at ~107,000 tokens per question, every question. | 100% | $0.161 |
-| **2** | [Send only what matters](demos/module_2_send_only_what_matters.ipynb) | Chunk the report, send the 5 chunks closest to the question. | Finds Q3, misses the Q2 appendix, admits it cannot compare. | 46% | $0.006 |
+| **1** | [Just upload the PDF](demos/module_1_just_upload_the_pdf.ipynb) | Put the whole report in every prompt. | Right answer — at ~107,000 tokens per question, every question. Charts the cost. | 100% | $0.161 |
+| **2** | [Send only what matters](demos/module_2_send_only_what_matters.ipynb) | Chunk the report, store the vectors in Chroma, send the 5 chunks closest to the question, with the chat history. | Finds Q3, misses the Q2 appendix, admits it cannot compare. Charted against Module 1. | 46% | $0.006 |
 | **3** | [Give the model judgment](demos/module_3_give_the_model_judgment.ipynb) | Hand the model a search tool and let it decide what to look for. | Searches Q3, then Q2, gets it right — but can loop forever when the answer isn't there. | 79% | $0.014 |
-| **4** | [Search with judgment](demos/module_4_search_with_judgment.ipynb) | The agent also **grades** what it retrieved, **rewrites** failed searches, and **verifies** its answer. | Right answer — and says so plainly when the report doesn't contain one. | **93%** | **$0.020** |
+| **4** | [Search with judgment](demos/module_4_search_with_judgment.ipynb) | The agent also **grades** what it retrieved, **rewrites** failed searches, and **verifies** its answer. | Right answer — and says so plainly when the report doesn't contain one. Holds a conversation, charted against Modules 1 and 2. | **93%** | **$0.020** |
 | **5** | [Ship it](demos/module_5_ship_it.md) | Deploy Module 4 unchanged on [AgentShip](https://github.com/Agent-Ship/agent-ship). | HTTP API, sessions that survive restarts, execution traces. | — | — |
 | **6** | [Compare them all](demos/module_6_compare_them_all.ipynb) | Run 1–4 side by side on the same questions. | The table above, reproduced live. | — | — |
 
@@ -71,8 +71,15 @@ accuracy — all three of its failures were running out of steps mid-task. Modul
 Module 1's accuracy at an eighth of the cost, and its one miss was a question where it didn't find
 the passage and *said so* instead of inventing a number.
 
-> **How retrieval works here.** Chunks are embedded once and cached as a NumPy array in
-> `data/.index/`; a search is one dot product over it. No vector database, no extra service.
+> **How retrieval works here.** Chunks are embedded once and the vectors cached in `data/.index/`.
+> Module 2 stores them in Chroma, an in-memory vector database, and checks that Chroma returns
+> the same chunks as a plain NumPy dot product. From Module 3 on, `search_docs` queries the same
+> Chroma collection. Chroma runs inside Python, so there is no extra service to start.
+
+> **The same conversation, three ways.** Modules 1, 2 and 4 each answer the same three questions
+> as one conversation: *"What was Q3 revenue?"*, *"How about Q2?"*, *"And the margin?"*. Each
+> saves its token counts and cost in `data/.runs/`, and the next one charts itself against them,
+> so run the modules in order.
 
 ## 🚀 Setup
 
@@ -209,9 +216,9 @@ minutes — run Module 6 once before a live demo to warm the server's cache.
 
 ## 🔭 Going Further: The OpenSearch Modules
 
-These six modules deliberately keep retrieval as simple as possible — one NumPy array, no services
-to run. The next step up is **real hybrid retrieval**: BM25 keyword search and k-NN vector search
-in a single query, fused with reciprocal rank fusion, then reranked.
+These six modules deliberately keep retrieval as simple as possible — vector search in an
+in-memory Chroma collection, no services to run. The next step up is **real hybrid retrieval**:
+BM25 keyword search and k-NN vector search in a single query, fused with reciprocal rank fusion, then reranked.
 
 That material lives in its own repository:
 
