@@ -1,5 +1,0 @@
-# v5's researcher: the v4 agent reranked to 3 chunks, one retry, no thinking for grade/rewrite/verify,
-# and only the last 3 turns of history in the prompt.
-name: researcher-v5
-engine: langgraph
-code: lecture2/agentic_rag_tuned.py:build_v5   # tools: [search_docs_hybrid_top3]

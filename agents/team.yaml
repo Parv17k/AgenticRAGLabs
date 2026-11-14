@@ -1,11 +1,11 @@
-# Slide 62 · a coordinator routes to specialists, by their descriptions.
-#   agentship run agents/team.yaml --input "Compare Q3 and Q2 revenue."
-# The slide gives the analyst openai/gpt-4o-mini and the writer anthropic/claude-sonnet-4-6;
+# A coordinator routes to specialists, by their descriptions.
+# agentship run agents/team.yaml --input "Compare Q3 and Q2 revenue."
+# The course gives the analyst openai/gpt-4o-mini and the writer anthropic/claude-sonnet-4-6;
 # here every member runs on gemini-3.5-flash.
 name: research-team
 engine: langgraph
 model: gemini/gemini-3.5-flash
-params: {reasoning_effort: none, max_tokens: 2048}   # applies to the coordinator and inline members
+params: {reasoning_effort: none, max_tokens: 2048} # applies to the coordinator and inline members
 members:
   - name: analyst
     description: arithmetic and comparisons over known numbers
@@ -13,7 +13,7 @@ members:
   - name: writer
     description: explanations, summaries
     model: gemini/gemini-3.5-flash
-  - name: researcher   # a member needs a name, even with ref:
+  - name: researcher # a member needs a name, even with ref:
     ref: ./researcher.yaml
     description: facts and numbers from Acme's filings, including comparisons across quarters
 observability:

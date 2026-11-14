@@ -1,28 +1,29 @@
 """eval.py: run versions of the Acme assistant on the golden set and score them side by side.
 
-Retrieval and generation are scored separately, as on the evaluation slides:
+Retrieval and generation are scored separately:
 
-    routing    retrieved when it should, skipped when it shouldn't
-    recall     share of gold facts found in the retrieved chunks (top 5 per search)
-    MRR        1 / rank of the first retrieved chunk that holds a gold fact
+    routing retrieved when it should, skipped when it shouldn't
+    recall share of gold facts found in the retrieved chunks (top 5 per search)
+    MRR 1 / rank of the first retrieved chunk that holds a gold fact
                (an agent that searches twice is scored on all the chunks it got back)
-    faithful   share of the answer's claims supported by what the model was given (LLM judge)
-    correct    answer matches the reference: 1, 0.5 or 0 (LLM judge)
+    faithful share of the answer's claims supported by what the model was given (LLM judge)
+    correct answer matches the reference: 1, 0.5 or 0 (LLM judge)
 
 plus input tokens, $ per query and p95 latency. The judge's own cost is reported separately.
 
-    python eval.py --agents v0,v1                              # the whole golden set
-    python eval.py --agents v1 --ids q3_vs_q2_revenue,thanks   # a few questions
+    python eval.py --agents v0,v1 # the whole golden set
+    python eval.py --agents v1 --ids q3_vs_q2_revenue,thanks # a few questions
     python eval.py --agents v0,v1 "How did Acme's Q3 margin compare to Q2, and why?"
 
-    v0  the whole filing in every prompt                  (chapter 1)
-    v1  basic RAG, top 5 chunks                           (chapter 2)
-    v2  a LangGraph ReAct agent with search_docs          (chapter 3, agents/langgraph_agent.py)
-    v3  agentic RAG, served on AgentShip                  (chapters 4–5, agents/agentic_rag.yaml)
-    v4  v3 on OpenSearch hybrid search + rerank           (lecture 2, lecture2/v4.yaml)
-    v5  v4 tuned by configuration, as a team              (lecture 2, lecture2/v5/team.yaml)
+    v0 the whole filing in every prompt (module 1)
+    v1 basic RAG, top 5 chunks (module 2)
+    v2 a LangGraph ReAct agent with search_docs (module 3, agents/langgraph_agent.py)
+    v3 agentic RAG, served on AgentShip (modules 4-5, agents/agentic_rag.yaml)
 
-v3 onwards need AgentShip (`pip install -e .`, Python 3.13+); v4 and v5 need OpenSearch.
+Hybrid BM25 + vector retrieval lives in its own repo:
+https://github.com/harshuljain13/opensearch-in-action
+
+v3 onwards need AgentShip (`pip install -e .`, Python 3.13+).
 golden.json has 14 questions; a real golden set
 has 200 to 500, with gold chunks labelled by people.
 """
@@ -48,22 +49,22 @@ from litellm.integrations.custom_logger import CustomLogger
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from tools import settings  # noqa: E402  (loads .env)
-from tools.search_docs import CALLS, DOC, format_hits, load_index, search_docs  # noqa: E402
+from tools import settings # noqa: E402 (loads .env)
+from tools.search_docs import CALLS, DOC, format_hits, load_index, search_docs # noqa: E402
 
 MODEL = settings.MODEL
 JUDGE_MODEL = os.environ.get("JUDGE_MODEL", MODEL)
 K = 5
-#: The judge reads at most this many tokens of context. v0's context is the whole filing; for it the
-#: judge reads the chunks nearest to the answer instead, so judging does not cost another v0 call.
+#: The judge reads at most this many tokens of context. Module 1's context is the whole filing; for it the
+#: judge reads the chunks nearest to the answer instead, so judging does not cost another Module 1 call.
 JUDGE_CONTEXT_TOKENS = 12_000
 
 
 @dataclass
 class Run:
     answer: str
-    context: str  # everything the model was given to answer from
-    chunks: list[str] | None  # retrieved chunks in rank order; None when there is no retrieval step
+    context: str # everything the model was given to answer from
+    chunks: list[str] | None # retrieved chunks in rank order; None when there is no retrieval step
     searches: list[str] = field(default_factory=list)
     retrieved: bool = False
     prompt_tokens: int = 0
@@ -129,13 +130,13 @@ class Meter(CustomLogger):
 
     def _record(self, kwargs: dict, response) -> None:
         call_id = kwargs.get("litellm_call_id") or str(id(response))
-        if not self.on or call_id in self._seen:  # LiteLLM may report one call to both hooks
+        if not self.on or call_id in self._seen: # LiteLLM may report one call to both hooks
             return
         self._seen.add(call_id)
         usage = getattr(response, "usage", None)
         self.prompt_tokens += getattr(usage, "prompt_tokens", 0) or 0
         self.completion_tokens += getattr(usage, "completion_tokens", 0) or 0
-        # list price, as for v0–v2 (LiteLLM's response_cost would subtract Gemini's cache discount)
+        # list price, as for Module 1–Module 3 (LiteLLM's response_cost would subtract Gemini's cache discount)
         self.cost += settings.price(
             getattr(usage, "prompt_tokens", 0) or 0, getattr(usage, "completion_tokens", 0) or 0) or 0.0
 
@@ -152,9 +153,9 @@ litellm.callbacks.append(METER)
 
 @lru_cache(maxsize=None)
 def agent(spec: str):
-    from agentship import build_agent  # only v3 onwards need AgentShip installed
+    from agentship import build_agent # only v3 onwards need AgentShip installed
 
-    os.chdir(HERE)  # code: references in the specs are relative to demos/
+    os.chdir(HERE) # code: references in the specs are relative to demos/
     return build_agent(str(HERE / spec))
 
 
@@ -178,7 +179,7 @@ def agentship_run(spec: str, question: str) -> Run:
         result = _run_async(agent(spec).run(question))
     finally:
         METER.on = False
-    hits = list({h["id"]: h for call in CALLS for h in call["hits"]}.values())  # first-seen order, no repeats
+    hits = list({h["id"]: h for call in CALLS for h in call["hits"]}.values()) # first-seen order, no repeats
     return Run(str(result.output), format_hits(hits), [h["text"] for h in hits], [c["query"] for c in CALLS],
                retrieved=bool(CALLS), prompt_tokens=METER.prompt_tokens,
                completion_tokens=METER.completion_tokens, cost=METER.cost, latency=time.perf_counter() - start)
@@ -209,21 +210,11 @@ def _v2_app():
 
 
 def v3(question: str) -> Run:
-    """Agentic RAG: route, retrieve, grade, rewrite, verify. The chapter 4 graph, served on AgentShip."""
+    """Agentic RAG: route, retrieve, grade, rewrite, verify. The module 4 graph, served on AgentShip."""
     return agentship_run("agents/agentic_rag.yaml", question)
 
 
-def v4(question: str) -> Run:
-    """Lecture 2: v3's graph with OpenSearch hybrid search + RRF + rerank behind search_docs."""
-    return agentship_run("lecture2/v4.yaml", question)
-
-
-def v5(question: str) -> Run:
-    """Lecture 2: v4 tuned by configuration: a team router, rerank to 3, fewer retries."""
-    return agentship_run("lecture2/v5/team.yaml", question)
-
-
-VERSIONS = {"v0": v0, "v1": v1, "v2": v2, "v3": v3, "v4": v4, "v5": v5}
+VERSIONS = {"v0": v0, "v1": v1, "v2": v2, "v3": v3}
 
 
 # ---------------------------------------------------------------- scoring
@@ -263,10 +254,10 @@ Return JSON only: {{"claims": [{{"claim": "...", "supported": true}}], "correct"
 
 def judge(item: dict, run: Run) -> tuple[float | None, float | None, str, float]:
     """faithfulness, correctness (None without a reference), the judge's reason, and the judge's cost."""
-    if not run.answer.strip():  # nothing to judge, and a judge may still call it correct
+    if not run.answer.strip(): # nothing to judge, and a judge may still call it correct
         return None, (0.0 if item.get("reference") else None), "empty answer", 0.0
     context = run.context or "(nothing)"
-    if len(context) > JUDGE_CONTEXT_TOKENS * 4:  # v0: judge against the chunks nearest the answer
+    if len(context) > JUDGE_CONTEXT_TOKENS * 4: # v0: judge against the chunks nearest the answer
         context = format_hits(search_docs(run.answer[:2000], k=JUDGE_CONTEXT_TOKENS // 500))
         CALLS.pop()
     resp, cost, _ = complete([{"role": "user", "content": JUDGE_PROMPT.format(
@@ -277,7 +268,7 @@ def judge(item: dict, run: Run) -> tuple[float | None, float | None, str, float]
     verdict = json.loads(re.search(r"\{.*\}", text, re.S).group())
     claims = verdict.get("claims") or []
     if not item.get("should_retrieve", True) and not run.chunks:
-        faithful = None  # small talk answered without evidence: nothing to be faithful to
+        faithful = None # small talk answered without evidence: nothing to be faithful to
     else:
         faithful = sum(bool(c.get("supported")) for c in claims) / len(claims) if claims else 1.0
     correct = verdict.get("correct")
@@ -297,7 +288,7 @@ def evaluate(version: str, item: dict) -> dict:
 
 def summarize(rows: list[dict]) -> pd.DataFrame:
     df = pd.DataFrame(rows)
-    for col in ("routing_ok", "recall", "mrr", "faithful", "correct", "cost"):  # None means n/a, not 0
+    for col in ("routing_ok", "recall", "mrr", "faithful", "correct", "cost"): # None means n/a, not 0
         df[col] = pd.to_numeric(df[col].astype(object).where(df[col].notna()), errors="coerce")
     return df.groupby("version", sort=False).agg(
         questions=("id", "count"),
@@ -333,20 +324,20 @@ def main() -> None:
     else:
         items = [g for g in golden if not args.ids or g["id"] in args.ids.split(",")]
 
-    load_index()  # build or load the chunk index up front so it doesn't count as latency
+    load_index() # build or load the chunk index up front so it doesn't count as latency
     rows = []
     for version in versions:
         for item in items:
             try:
                 row = evaluate(version, item)
-            except Exception as e:  # one bad turn (a timeout, a runaway answer) shouldn't end the run
-                print(f"{version}  {item['id']:<22} FAILED: {type(e).__name__}: {str(e)[:150]}", flush=True)
+            except Exception as e: # one bad turn (a timeout, a runaway answer) shouldn't end the run
+                print(f"{version} {item['id']:<22} FAILED: {type(e).__name__}: {str(e)[:150]}", flush=True)
                 continue
             rows.append(row)
             score = "n/a" if row["correct"] is None else f"{row['correct']:g}"
             faithful = "n/a" if row["faithful"] is None else f"{row['faithful']:.2f}"
-            print(f"{version}  {item['id']:<22} in={row['input_tokens']:>7,}  searches={row['searches']}  "
-                  f"faithful={faithful}  correct={score}  {row['latency']:.1f}s", flush=True)
+            print(f"{version} {item['id']:<22} in={row['input_tokens']:>7,} searches={row['searches']} "
+                  f"faithful={faithful} correct={score} {row['latency']:.1f}s", flush=True)
             if args.question:
                 print(f"\n{row['run']['answer']}\n")
 

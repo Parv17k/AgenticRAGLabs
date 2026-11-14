@@ -1,11 +1,11 @@
-# Slide 62 · the team's researcher: an agent with search_docs. It decides whether to search, and how often.
-#   agentship run agents/researcher.yaml --input "Compare Q3 and Q2 revenue."
+# The team's researcher: an agent with search_docs. It decides whether to search, and how often.
+# agentship run agents/researcher.yaml --input "Compare Q3 and Q2 revenue."
 name: researcher
 engine: langgraph
 model: gemini/gemini-3.5-flash
-params: {reasoning_effort: none, max_tokens: 2048}   # no thinking: faster and cheaper
+params: {reasoning_effort: none, max_tokens: 2048} # no thinking: faster and cheaper
 tools: [search_docs]
-durability: checkpoint   # remembers the thread, and resumes it after a crash with Postgres
+durability: checkpoint # remembers the thread, and resumes it after a crash with Postgres
 prompt: |
   You answer questions about Acme Corp's quarterly filing (Form 10-Q for Q3 2026).
   Use search_docs for any Acme-specific fact, and search once per quarter or topic you need:

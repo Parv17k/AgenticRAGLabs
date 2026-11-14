@@ -4,9 +4,9 @@ pyproject.toml registers them under the agentship.tools entry point, so an agent
 by name, like the built-in calculator. Every variant shows the model the same name and
 description: the agent cannot tell, and does not need to know, what runs behind it.
 
-    tools: [search_docs]               v1 index: fixed chunks, vectors only, top 5
-    tools: [search_docs_hybrid]        v4: OpenSearch hybrid + RRF + rerank, top 5
-    tools: [search_docs_hybrid_top3]   v5: the same, reranked down to 3
+    tools: [search_docs] v1 index: fixed chunks, vectors only, top 5
+    tools: [search_docs_hybrid] v4: OpenSearch hybrid + RRF + rerank, top 5
+    tools: [search_docs_hybrid_top3] v5: the same, reranked down to 3
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from . import opensearch_search
 from . import search_docs as basic
 
-#: The description IS the routing policy (slide 49): when to search, and when not to.
+#: The description IS the routing policy: when to search, and when not to.
 DESCRIPTION = (
     "Search Acme's internal filings (Form 10-Q for Q3 2026, with Q2 2026 results in an appendix). "
     "Use for Acme-specific numbers and facts. One topic or quarter per search: to compare two "

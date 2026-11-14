@@ -1,8 +1,0 @@
-# v5 team · a specialist for arithmetic over numbers the user already has.
-name: analyst
-engine: langgraph
-template: single
-model: gemini/gemini-3.5-flash
-params: {reasoning_effort: none, max_tokens: 2048}   # no thinking: faster and cheaper
-tools: [calculator]
-prompt: Use the calculator for every calculation. Answer with the number and one short sentence.

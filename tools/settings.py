@@ -70,6 +70,6 @@ def price(prompt_tokens: int, completion_tokens: int, model: str = MODEL) -> flo
                                               completion_tokens=completion_tokens)
             if inp or out:
                 return inp + out
-        except Exception:  # not in LiteLLM's price list
+        except Exception: # not in LiteLLM's price list
             continue
     return None

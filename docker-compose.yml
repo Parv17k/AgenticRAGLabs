@@ -1,5 +1,6 @@
-# Chapter 5: Postgres keeps agent sessions across restarts, Phoenix shows the traces,
-# and OpenSearch is lecture 2's hybrid index.
+# Module 5: Postgres keeps agent sessions across restarts and Phoenix shows the traces.
+# OpenSearch is unused by these modules; hybrid retrieval lives in
+# https://github.com/harshuljain13/opensearch-in-action
 #   docker compose up -d
 #   agentship db upgrade --allow-migrations --database-url postgresql://agentship:agentship@localhost:5434/agentship
 services:

@@ -1,7 +1,7 @@
-"""v2 · a LangGraph ReAct agent with search_docs (chapter 3, slides 37–41).
+"""Module 3 · a LangGraph ReAct agent with search_docs (Module 3,).
 
     START → agent ─ tool call ─→ tools ─┐
-              ↑                         │
+              ↑ │
               └─────────────────────────┘
               └─ no tool call → END
 
@@ -36,7 +36,7 @@ SYSTEM = SystemMessage(content=(
 
 
 def build_v2(model=None, checkpointer=None):
-    """The ReAct graph from slide 39, compiled. A checkpointer gives it memory per thread_id."""
+    """The ReAct graph, compiled. A checkpointer gives it memory per thread_id."""
     model = model or init_chat_model(CHAT_MODEL, **LLM_KWARGS)
     tools = [search_docs]
     llm = model.bind_tools(tools)

@@ -1,6 +1,6 @@
 """Generate acme_10q.txt: a synthetic ~100K-token quarterly filing for the lecture demos.
 
-Acme Corp is fictional. The headline numbers match the slides: Q3 2026 revenue $4.2B
+Acme Corp is fictional. The headline numbers: Q3 2026 revenue $4.2B
 (Q2 2026: $3.9B, up 7.7%), operating margin 21.0% (Q2 2026: 19.4%). Everything else is
 filler with the shape of a real 10-Q, so the document is long enough that sending all of it
 in every prompt (v0) is visibly expensive. Output is deterministic.

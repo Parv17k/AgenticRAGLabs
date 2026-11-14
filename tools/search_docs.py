@@ -1,4 +1,4 @@
-"""search_docs: the retrieval tool every version from v1 on uses.
+"""search_docs: the retrieval tool every version from Module 2 on uses.
 
 Chunks the Acme 10-Q exactly as the v1 notebook does (paragraph-aware, size=500, overlap=50),
 embeds the chunks once, and caches the index in data/.index/ so later runs start instantly.
@@ -22,7 +22,7 @@ import tiktoken
 
 try:
     from .settings import EMBED_MODEL, ROOT
-except ImportError:  # run as a script: python tools/search_docs.py
+except ImportError: # run as a script: python tools/search_docs.py
     from settings import EMBED_MODEL, ROOT
 
 DATA = ROOT / "data"
@@ -120,4 +120,4 @@ if __name__ == "__main__":
     parser.add_argument("-k", type=int, default=5)
     args = parser.parse_args()
     for h in search_docs(args.query, args.k):
-        print(f"chunk {h['id']:3}  {h['score']:.3f}  {h['section']}")
+        print(f"chunk {h['id']:3} {h['score']:.3f} {h['section']}")

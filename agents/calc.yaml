@@ -1,8 +1,8 @@
-# Slide 59 · one agent, one tool. The slide's model is openai/gpt-4o-mini; here gemini-3.5-flash (GEMINI_API_KEY).
-#   agentship run agents/calc.yaml --input "What is 17 times 23?"
+# One agent, one tool. Model: gemini-3.5-flash (GEMINI_API_KEY).
+# agentship run agents/calc.yaml --input "What is 17 times 23?"
 name: calculator-agent
 engine: langgraph
 model: gemini/gemini-3.5-flash
-params: {reasoning_effort: none, max_tokens: 2048}   # no thinking: faster and cheaper
+params: {reasoning_effort: none, max_tokens: 2048} # no thinking: faster and cheaper
 prompt: Use the calculator for arithmetic. Answer with just the number.
 tools: [calculator]

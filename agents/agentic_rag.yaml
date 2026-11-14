@@ -1,7 +1,7 @@
-# Slide 60 · ship v3: point AgentShip at the chapter 4 graph.
-#   agentship run agents/agentic_rag.yaml --input "How did Acme's Q3 margin compare to Q2, and why?"
-#   agentship serve --agents-dir agents     # then http://127.0.0.1:8000/studio, key dev-secret
+# Ship Module 4: point AgentShip at its graph.
+# agentship run agents/agentic_rag.yaml --input "How did Acme's Q3 margin compare to Q2, and why?"
+# agentship serve --agents-dir agents # then http://127.0.0.1:8000/studio, key dev-secret
 name: agentic-rag
 engine: langgraph
 code: agents/agentic_rag.py:build_agent
-tools: [search_docs]   # for the reader: with code:, AgentShip takes the spec from build_agent()
+tools: [search_docs] # for the reader: with code:, AgentShip takes the spec from build_agent()
