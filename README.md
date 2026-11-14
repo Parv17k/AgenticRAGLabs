@@ -286,10 +286,6 @@ Thanks to everyone who has shaped these labs.
 
 <div align="center">
 
-<a href="https://github.com/Parv17k/AgenticRAGLabs/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Parv17k/AgenticRAGLabs" alt="Contributors" />
-</a>
-
 | Contributor | Role |
 |---|---|
 | [**@Parv17k**](https://github.com/Parv17k) | Author and maintainer — labs, agents, evaluation harness |
