@@ -12,6 +12,12 @@
 </p>
 
 <p>
+  <a href="https://drive.google.com/drive/folders/1Odf5nXXHFy1TUnrkO89I67ct3VH-Gelb?usp=sharing">
+    <img src="https://img.shields.io/badge/📑%20Course%20Slides-open%20in%20Drive-34A853?style=for-the-badge&logo=googledrive&logoColor=white" alt="Course slides" />
+  </a>
+</p>
+
+<p>
   <img src="https://img.shields.io/badge/best%20accuracy-93%25-brightgreen?style=flat-square" alt="Best accuracy 93%" />
   <img src="https://img.shields.io/badge/at%20cost-%240.020%2Fquestion-blue?style=flat-square" alt="Cost per question" />
   <img src="https://img.shields.io/badge/8×%20cheaper-than%20module%201-orange?style=flat-square" alt="8x cheaper than module 1" />
@@ -19,6 +25,7 @@
 </p>
 
 <p>
+  <a href="https://drive.google.com/drive/folders/1Odf5nXXHFy1TUnrkO89I67ct3VH-Gelb?usp=sharing">Slides</a> ·
   <a href="#-the-modules">The Modules</a> ·
   <a href="#-setup">Setup</a> ·
   <a href="#-running-the-demos">Running</a> ·
@@ -43,6 +50,8 @@ question about the *same* document, each one fixing what the previous one got wr
 ## 📚 The Modules
 
 Each module is one file in [`demos/`](demos/). Run them in order; each builds on the one before.
+The lecture slides that go with them are
+[here](https://drive.google.com/drive/folders/1Odf5nXXHFy1TUnrkO89I67ct3VH-Gelb?usp=sharing).
 
 | # | Module | The idea | What happens | Accuracy | Cost/q |
 |---|---|---|---|---:|---:|
