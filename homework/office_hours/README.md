@@ -148,3 +148,12 @@ route (+3).
 | `429` / rate-limit errors | The Gemini free tier allows 5 requests/minute. Enable billing, or evaluate with `--only`. |
 | The bot answers "the passages don't mention…" when they do | Your grader dropped the passage. Print `state["passages"]` after `grade`. |
 | An escalation sent an email without pausing | Check both halves of 5b: `side_effecting=True` *and* `confirm_writes=True`. |
+
+## Questions or career guidance?
+
+::: contact
+Have a question about this homework, or want career guidance? Schedule a call with us on Topmate:
+
+- **Parv Khatri**: [topmate.io/parv39](https://topmate.io/parv39)
+- **Harshul Jain**: [topmate.io/harshuljain13](https://topmate.io/harshuljain13)
+:::
