@@ -1,0 +1,14 @@
+[
+  {"id": "s1", "route": "syllabus", "question": "When is the midterm?",
+   "expected": "Thursday, March 11, 2027, 2:00-3:20 pm, in Room 417."},
+  {"id": "s2", "route": "syllabus", "question": "Is there a final exam in this course?",
+   "expected": "No, there is no final exam."},
+  {"id": "c1", "route": "concepts", "question": "What is reciprocal rank fusion?",
+   "expected": "A way to merge ranked lists in hybrid search: each document scores the sum of 1/(k + rank), k usually 60."},
+  {"id": "c2", "route": "concepts", "question": "What is a conditional edge in LangGraph?",
+   "expected": "An edge that calls a routing function to choose the next node based on the state."},
+  {"id": "e1", "route": "escalate", "question": "I have the flu and a doctor's note. Please email the TA to ask for a 3-day extension on Homework 4.",
+   "expected_to": "priya.natarajan@agnt6100.example.edu"},
+  {"id": "e2", "route": "escalate", "question": "Can you message Daniel? I think rubric item 3 on my Homework 2 was graded wrong.",
+   "expected_to": "daniel.reyes@agnt6100.example.edu"}
+]
