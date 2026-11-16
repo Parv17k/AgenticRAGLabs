@@ -97,13 +97,13 @@ python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -e .
 
-pip install "agentship-core @ git+https://github.com/Agent-Ship/agent-ship.git@main#subdirectory=packages/agentship-core" \
+pip install --force-reinstall --no-deps "agentship-core @ git+https://github.com/Agent-Ship/agent-ship.git@main#subdirectory=packages/agentship-core" \
             "agentship-langgraph @ git+https://github.com/Agent-Ship/agent-ship.git@main#subdirectory=packages/agentship-langgraph"
 
 python -m ipykernel install --user --name agentic-rag-demos
 ```
 
-The second command installs the current AgentShip from GitHub; the third registers the Jupyter
+The second command replaces the AgentShip release from PyPI with the current version on GitHub (`--force-reinstall` is required: both report version 0.0.4, so without it pip keeps the older PyPI copy); the third registers the Jupyter
 kernel the notebooks use.
 
 **3. Add your key.**
