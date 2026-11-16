@@ -1,7 +1,8 @@
 # AGNT 6100 Concept Notes
 
-Short study notes for the course, written for the Office Hours Bot homework. One section per
-concept.
+Short study notes for the course, one section per concept.
+
+> **Disclaimer: AI-generated synthetic data.** Everything in this file was generated with AI for a teaching exercise. All people, names, email addresses, courses, places, dates and policies are fictional. Any resemblance to real persons, courses or institutions is coincidental. Not affiliated with or endorsed by any university.
 
 ## Tokens and inference cost
 A token is the unit a language model reads and writes, roughly three quarters of an English word.

@@ -18,8 +18,10 @@ Student ─→ route ─────┼─ concepts ─ an AgentShip agent in pu
                                     ⏸ PAUSES until a human approves
 ```
 
-All data in `data/` is **synthetic**: a 20-section syllabus and 17 concept notes. Nothing is really
-emailed. "Sending" appends a line to `outbox.jsonl`.
+> **Disclaimer: AI-generated synthetic data.** The data in `data/`, including the course, people, email addresses, places, dates and
+> policies in this homework were generated with AI for teaching. They are fictional, and any
+> resemblance to real persons, courses or institutions is coincidental. Not affiliated with or
+> endorsed by any university. Nothing is really emailed: "sending" appends a line to `outbox.jsonl`.
 
 ## Setup
 
@@ -43,8 +45,8 @@ BM25 ranks the wrong section first. Save it for your report.
 **2 · AgentShip warm-up (no Python).** In `concepts.yaml`, add the `kb:search_concepts` tool and
 finish the prompt. In `team.yaml`, add the `concepts` member. Run
 `agentship run team.yaml -v --input "Explain embeddings"` and watch `classify → route → dispatch`.
-*Why go further?* This team's syllabus agent can't grade or retry, and an approval pause inside a
-`members:` specialist never reaches the supervisor. So the real bot is a graph you build.
+*Why go further?* This team can't grade or retry, and a pause inside a `members:` specialist never
+reaches the supervisor, so the real bot is a graph you build.
 
 **3 · Build the syllabus branch in LangGraph** (`graph.py`; the diagram at the top is your spec):
 
@@ -56,8 +58,7 @@ finish the prompt. In `team.yaml`, add the `concepts` member. Run
 | 3d | `rewrite` | Write a better query and **increment `retries`**, so the loop ends |
 | 3e | edges | Wire `retrieve → grade → …` as in the diagram |
 
-Test with `agentship run office_hours.yaml --input "Is there a weekly lab section?"`. It should
-say it can't find this, not invent an answer.
+Test: `agentship run office_hours.yaml --input "Is there a weekly lab section?"` must not invent one.
 
 **4 · Plug in the YAML specialist.** In `ask_concepts`, build the agent from `concepts.yaml` with
 AgentShip's `build_agent` and `await` its `run()`.
@@ -77,16 +78,14 @@ curl -s -X POST localhost:8000/v1/agents/office-hours:resume \
   -d '{"session_id": "<from above>", "resume_value": {"approved": true}}'
 ```
 
-Check that rejecting (`"approved": false`) writes nothing. Then pause a run, **restart the
-server**, and approve it. It continues, because the pause is stored in Postgres.
+Rejecting (`"approved": false`) must write nothing. Pause a run, **restart the server**, then approve:
+it continues, because the pause is stored in Postgres.
 
 **6 · Evaluate and improve.** Grow `golden.json` to **15+ questions**: at least 4 per route, 2
 *ambiguous* ones (e.g. "Can I get an extension for a job interview?") and 1 the syllabus can't
-answer. Run `python evaluate.py`, which scores routing and answers separately. Using
-`results.json` and the Phoenix traces (http://localhost:6006), **fix at least two failures**.
-Typical ones: multi-part questions (try one search per part), policy questions misrouted as
-requests (sharpen `ROUTES` or add router examples), and a grader that drops good evidence.
-Run each version at least twice, because LLM outputs vary.
+answer. Run `python evaluate.py` (it scores routing and answers separately) and, using `results.json` and
+Phoenix traces (http://localhost:6006), **fix at least two failures**, e.g. multi-part questions or
+policy questions misrouted as requests. Run each version at least twice: LLM outputs vary.
 
 **7 · Report.** `REPORT.md`, at most 2 pages: before/after tables with one paragraph per fix,
 a Phoenix trace screenshot, your Step 1 BM25 miss and how you'd fix it, **what doesn't work
@@ -103,11 +102,11 @@ yet**, and which AI tools you used.
 
 | Area | Points | Full marks when… |
 |--------------------------|------:|-------------------------------------------------|
-| Syllabus branch (3) | 25 | Grades, rewrites in a bounded loop, cites ids, admits when it can't find something |
-| AgentShip integration (2, 4) | 15 | The team routes correctly; the YAML specialist is called from the graph |
-| Human-in-the-loop (5) | 20 | Pauses before sending; approve writes once; reject writes nothing; recording |
-| Evaluation (6) | 25 | 15+ good questions; two real fixes with before/after numbers; repeated runs |
-| Report (7) | 15 | Clear and honest, with a trace screenshot and real limitations |
+| Syllabus branch (3) | 25 | Grades, bounded rewrites, citations, admits what it can't find |
+| AgentShip (2, 4) | 15 | Team routes correctly; YAML specialist called from the graph |
+| Human-in-the-loop (5) | 20 | Pauses; approve writes once; reject writes nothing; recording |
+| Evaluation (6) | 25 | 15+ questions; two fixes with before/after numbers; repeated runs |
+| Report (7) | 15 | Clear, honest, trace screenshot, real limitations |
 
 Staff will also run a **hidden question set**. Invented facts cost more than "I couldn't find
 that". **Bonus:** hybrid search with RRF that fixes your Step 1 miss (+4); a prompt-injection

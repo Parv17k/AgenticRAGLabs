@@ -1,29 +1,27 @@
 # AGNT 6100: Building Agentic Systems — Spring 2027 Syllabus
 
-This is a synthetic syllabus for a fictional course, written for the Office Hours Bot homework.
-Every name, date and policy below is made up.
+> **Disclaimer: AI-generated synthetic data.** Everything in this file was generated with AI for a teaching exercise. All people, names, email addresses, courses, places, dates and policies are fictional. Any resemblance to real persons, courses or institutions is coincidental. Not affiliated with or endorsed by any university.
 
 ## Course overview
 AGNT 6100 teaches students to design, build, evaluate and deploy LLM agents. Topics include
 retrieval-augmented generation, tool use, LangGraph state machines, multi-agent supervisors,
 human-in-the-loop approval and production observability. The course is 3 credits and meets in
-person on Tuesdays and Thursdays, 2:00–3:20 pm, in Room 417 of the Lin Engineering Building.
+person on Tuesdays and Thursdays, 2:00–3:20 pm, in Room 417 of Building A.
 
 ## Instructor and teaching assistants
-The instructor is Prof. Mira Okafor (mira.okafor@agnt6100.example.edu). The teaching assistants
-are Daniel Reyes (daniel.reyes@agnt6100.example.edu), who handles homework grading and
-regrades, and Priya Natarajan (priya.natarajan@agnt6100.example.edu), who handles the final
+The instructor is Prof. Avery Example (avery.example@agnt6100.example.edu). The teaching assistants
+are Alex Sample (alex.sample@agnt6100.example.edu), who handles homework grading and
+regrades, and Sam Placeholder (sam.placeholder@agnt6100.example.edu), who handles the final
 project and extension requests. Email the TA who owns the topic; the course inbox
 (staff@agnt6100.example.edu) reaches everyone.
 
 ## Office hours
-Prof. Okafor holds office hours on Wednesdays, 4:00–5:30 pm, in Room 512 of the Lin
-Engineering Building. Daniel Reyes holds office hours on Mondays, 11:00 am–12:30 pm, on Zoom
-(link pinned in the course forum). Priya Natarajan holds office hours on Fridays, 1:00–2:30 pm,
+Prof. Example holds office hours on Wednesdays, 4:00–5:30 pm, in Room 512 of Building A. Alex Sample holds office hours on Mondays, 11:00 am–12:30 pm, by video call
+(link pinned in the course forum). Sam Placeholder holds office hours on Fridays, 1:00–2:30 pm,
 in the 4th-floor study lounge. No office hours are held during spring break.
 
 ## Prerequisites
-Students must have completed Intro to Machine Learning (ML 5010) or an equivalent course, and be
+Students must have completed an introductory machine learning course, and be
 comfortable writing Python 3. Familiarity with REST APIs and Git is expected. There is no
 prerequisite in natural language processing.
 
@@ -39,19 +37,19 @@ exam. Letter grades use these cutoffs: A at 93, A- at 90, B+ at 87, B at 83, B- 
 C at 70. Grades are not curved.
 
 ## Homework submission
-Homeworks are submitted on Gradescope by 11:59 pm Eastern Time on the due date. Each submission
+Homeworks are submitted on the course portal by 11:59 pm Eastern Time on the due date. Each submission
 must include the code, a README, and the evaluation results file. Late submissions are handled
 under the late policy below.
 
 ## Late policy and slip days
 Every student has 3 slip days for the semester, which can be used on homeworks only, not on the
 midterm or final project. A slip day extends a homework deadline by 24 hours with no penalty, and
-you do not need to ask for one; Gradescope tracks them automatically. Once your slip days are
+you do not need to ask for one; the course portal tracks them automatically. Once your slip days are
 used up, late homework loses 10% per day and is not accepted more than 3 days late.
 
 ## Extensions
 Extensions beyond slip days are granted only for documented emergencies such as illness, family
-emergencies or religious observance. Request an extension by emailing Priya Natarajan before the
+emergencies or religious observance. Request an extension by emailing Sam Placeholder before the
 deadline, with documentation if available. Extensions are not granted for job interviews,
 travel, or workload from other courses. The TA, not the Office Hours Bot, decides every request.
 
@@ -74,9 +72,9 @@ Each quiz has 5 questions and takes about 10 minutes. The lowest two quiz scores
 Participation is earned by attending class and posting in the course forum.
 
 ## Regrade requests
-Regrade requests are submitted through Gradescope within 7 days of grades being released. Explain
-which rubric item you believe was misapplied. Daniel Reyes reviews homework regrades; Prof.
-Okafor reviews midterm regrades. A regrade may raise or lower your score.
+Regrade requests are submitted through the course portal within 7 days of grades being released. Explain
+which rubric item you believe was misapplied. Alex Sample reviews homework regrades; Prof.
+Example reviews midterm regrades. A regrade may raise or lower your score.
 
 ## Collaboration policy
 You may discuss homework ideas with classmates, but code and write-ups must be your own. List the
@@ -95,7 +93,7 @@ the staff to say you will miss a regular class.
 
 ## Accommodations
 Students who need exam or assignment accommodations should register with the university's
-Disability Services office and share their accommodation letter with Prof. Okafor at least one
+Disability Services office and share their accommodation letter with Prof. Example at least one
 week before the midterm. Accommodations cannot be applied retroactively.
 
 ## Communication
