@@ -2,12 +2,7 @@
 
 *A multi-agent course assistant with LangGraph and AgentShip.* The same handout as a PDF: [HOMEWORK.pdf](HOMEWORK.pdf).
 
-<div class="meta">
-<span><b>Builds on</b> workshop Modules 3–5</span>
-<span><b>Work</b> individually</span>
-<span><b>Due</b> ____________________</span>
-</div>
-
+**Builds on:** workshop Modules 3–5 · **Work:** individually · **Due:** ____________________
 ## The idea
 
 Build the **Office Hours Bot** for a fictional course, *AGNT 6100: Building Agentic Systems*. A
@@ -36,7 +31,6 @@ Build the **Office Hours Bot** for a fictional course, *AGNT 6100: Building Agen
   <text x="362" y="221" font-weight="bold" fill="#9a3412">escalate — draft an email to the right TA</text>
   <text x="362" y="242" fill="#9a3412" font-size="12">send_ta_email ⏸ PAUSES until a human approves</text>
 </svg>
-</div>
 
 All data in `data/` is **synthetic**: a 20-section syllabus and 17 concept notes. Nothing is really
 emailed. "Sending" appends a line to `outbox.jsonl`.
@@ -53,9 +47,7 @@ cd homework/office_hours && export PYTHONPATH=.
 python kb.py "slip days"                            # BM25 search, works out of the box
 ```
 
-::: note
-Add `--env-file ../../.env` to every `agentship` command below so it finds your API key.
-:::
+> Add `--env-file ../../.env` to every `agentship` command below so it finds your API key.
 
 ## Steps
 
@@ -116,12 +108,10 @@ yet**, and which AI tools you used.
 
 ## Submit
 
-::: checklist
 - The completed `homework/office_hours/` folder, with `golden.json` (15+) and `results.json`
 - `REPORT.md`
 - A ≤ 60-second recording: escalate → **paused** → approve → `outbox.jsonl` updated
 - One `curl` command in your README that runs against your server
-:::
 
 ## Grading (100 points + 10 bonus)
 
@@ -151,9 +141,7 @@ route (+3).
 
 ## Questions or career guidance?
 
-::: contact
 Have a question about this homework, or want career guidance? Schedule a call with us on Topmate:
 
 - **Parv Khatri**: [topmate.io/parv39](https://topmate.io/parv39)
 - **Harshul Jain**: [topmate.io/harshuljain13](https://topmate.io/harshuljain13)
-:::
