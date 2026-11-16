@@ -1,0 +1,13 @@
+# Step 2 warm-up: a declarative supervisor. No Python, no approval step.
+# AgentShip's classifier routes each question by the members' descriptions.
+#   agentship run team.yaml --env-file ../../.env -v --input "When is the midterm?"
+name: office-hours-team
+engine: langgraph
+model: gemini/gemini-3.5-flash
+params: {reasoning_effort: none, max_tokens: 2048}
+members:
+  - name: syllabus
+    ref: ./syllabus_basic.yaml
+    description: facts about this course - dates, deadlines, exams, grading, policies, office hours, staff
+  # TODO (Step 2): add the concepts member: a name, a ref to concepts.yaml, and a description.
+  # The description is what the classifier matches against, so write it carefully.

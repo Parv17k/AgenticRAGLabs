@@ -1,0 +1,7 @@
+# The Office Hours Bot: the hand-built LangGraph graph in graph.py, served by AgentShip.
+# With code:, AgentShip reads the spec (tools, durability, confirm_writes) from build_agent().
+#   agentship run office_hours.yaml --env-file ../../.env --input "When is the midterm?"
+#   agentship serve --agents-dir . --allow-in-memory-durability
+name: office-hours
+engine: langgraph
+code: graph.py:build_agent
