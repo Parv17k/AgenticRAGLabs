@@ -8,7 +8,7 @@
   {"id": "c2", "route": "concepts", "question": "What is a conditional edge in LangGraph?",
    "expected": "An edge that calls a routing function to choose the next node based on the state."},
   {"id": "e1", "route": "escalate", "question": "I have the flu and a doctor's note. Please email the TA to ask for a 3-day extension on Homework 4.",
-   "expected_to": "priya.natarajan@agnt6100.example.edu"},
-  {"id": "e2", "route": "escalate", "question": "Can you message Daniel? I think rubric item 3 on my Homework 2 was graded wrong.",
-   "expected_to": "daniel.reyes@agnt6100.example.edu"}
+   "expected_to": "sam.placeholder@agnt6100.example.edu"},
+  {"id": "e2", "route": "escalate", "question": "Can you message Alex? I think rubric item 3 on my Homework 2 was graded wrong.",
+   "expected_to": "alex.sample@agnt6100.example.edu"}
 ]

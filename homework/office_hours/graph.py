@@ -161,8 +161,8 @@ def build_office_hours_graph(model, tools, concepts_agent=None) -> StateGraph:
                          for m in conversation(state["messages"]))
         reply = ask(f"STAFF DIRECTORY:\n{staff}\n\nCONVERSATION:\n{chat}\n\n"
                     "Draft a short, polite email from the student to the right staff member for their "
-                    "request (extensions and the final project go to Priya Natarajan; homework grades and "
-                    "regrades go to Daniel Reyes; anything else to staff@agnt6100.example.edu). Don't invent "
+                    "request (extensions and the final project go to Sam Placeholder; homework grades and "
+                    "regrades go to Alex Sample; anything else to staff@agnt6100.example.edu). Don't invent "
                     'facts. Reply with JSON only: {"to": "...", "subject": "...", "body": "..."}')
         args = parse_json(reply)
         # TODO (Step 5a): turn `args` into a tool call. Return {"messages": [AIMessage(content="",
