@@ -3,34 +3,20 @@
 *A multi-agent course assistant with LangGraph and AgentShip.* The same handout as a PDF: [HOMEWORK.pdf](HOMEWORK.pdf).
 
 **Builds on:** workshop Modules 3–5 · **Work:** individually · **Due:** ____________________
+
 ## The idea
 
 Build the **Office Hours Bot** for a fictional course, *AGNT 6100: Building Agentic Systems*. A
 **supervisor** routes each student message to one of three specialists:
 
-<div class="diagram">
-<svg viewBox="0 0 760 270" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif" font-size="13">
-  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker></defs>
-  <rect x="10" y="112" width="110" height="46" rx="8" fill="#f1f5f9" stroke="#64748b"/>
-  <text x="65" y="133" text-anchor="middle" font-weight="bold">Student</text>
-  <text x="65" y="149" text-anchor="middle" fill="#475569" font-size="11">question</text>
-  <rect x="160" y="112" width="120" height="46" rx="8" fill="#ede9fe" stroke="#7c3aed"/>
-  <text x="220" y="133" text-anchor="middle" font-weight="bold">route</text>
-  <text x="220" y="149" text-anchor="middle" fill="#5b21b6" font-size="11">supervisor (1 LLM call)</text>
-  <line x1="120" y1="135" x2="158" y2="135" stroke="#555" stroke-width="1.5" marker-end="url(#a)"/>
-  <path d="M280 125 C 310 60, 320 40, 345 40" fill="none" stroke="#555" stroke-width="1.5" marker-end="url(#a)"/>
-  <line x1="280" y1="135" x2="345" y2="135" stroke="#555" stroke-width="1.5" marker-end="url(#a)"/>
-  <path d="M280 145 C 310 210, 320 230, 345 230" fill="none" stroke="#555" stroke-width="1.5" marker-end="url(#a)"/>
-  <rect x="348" y="12" width="400" height="58" rx="8" fill="#ecfdf5" stroke="#059669"/>
-  <text x="362" y="33" font-weight="bold" fill="#065f46">syllabus — agentic RAG you build in LangGraph</text>
-  <text x="362" y="54" fill="#065f46" font-size="12">retrieve → grade → (rewrite → retrieve)* → answer with [citations]</text>
-  <rect x="348" y="106" width="400" height="58" rx="8" fill="#eff6ff" stroke="#2563eb"/>
-  <text x="362" y="127" font-weight="bold" fill="#1e40af">concepts — an AgentShip agent in pure YAML</text>
-  <text x="362" y="148" fill="#1e40af" font-size="12">search_concepts tool over the course notes, zero Python</text>
-  <rect x="348" y="200" width="400" height="58" rx="8" fill="#fff7ed" stroke="#ea580c"/>
-  <text x="362" y="221" font-weight="bold" fill="#9a3412">escalate — draft an email to the right TA</text>
-  <text x="362" y="242" fill="#9a3412" font-size="12">send_ta_email ⏸ PAUSES until a human approves</text>
-</svg>
+```
+                      ┌─ syllabus ─ agentic RAG you build in LangGraph:
+                      │     retrieve → grade → (rewrite → retrieve)* → answer with [citations]
+Student ─→ route ─────┼─ concepts ─ an AgentShip agent in pure YAML (search_concepts tool)
+      (supervisor)    │
+                      └─ escalate ─ draft an email to the right TA → send_ta_email
+                                    ⏸ PAUSES until a human approves
+```
 
 All data in `data/` is **synthetic**: a 20-section syllabus and 17 concept notes. Nothing is really
 emailed. "Sending" appends a line to `outbox.jsonl`.
